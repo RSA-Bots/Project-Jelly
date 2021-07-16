@@ -99,3 +99,7 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Misc
+settings.json
+./settings.json/
