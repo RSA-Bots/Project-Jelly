@@ -1,6 +1,6 @@
 {
-	"name": "TS-Bot",
-	"version": "0.0.0",
+	"name": "JellyBot",
+	"version": "1.0.0",
 	"description": "",
 	"main": "index.js",
 	"scripts": {
