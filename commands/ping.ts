@@ -7,8 +7,8 @@ const ping: Command = {
 		Enabled: true,
 	},
 
-	Execute: (Message: Message, ...Args: string[]) => {
-		console.log(Message.content, Args);
+	Execute: async (Message: Message, Args: string[]) => {
+		await Message.reply("Pong");
 	},
 };
 

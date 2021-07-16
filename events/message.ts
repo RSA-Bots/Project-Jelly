@@ -23,7 +23,7 @@ const message: Event<Message> = {
 			});
 
 			if (CommandRequest.length > 0) {
-				CommandRequest[0].Execute(Message, ...Args);
+				CommandRequest[0].Execute(Message, Args);
 			}
 		}
 	},

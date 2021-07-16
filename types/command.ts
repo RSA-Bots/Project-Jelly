@@ -5,5 +5,5 @@ export interface Command {
 	Config: {
 		Enabled: boolean;
 	};
-	Execute: (Message: Message, ...Args: string[]) => void;
+	Execute: (Message: Message, Args: string[]) => void;
 }
