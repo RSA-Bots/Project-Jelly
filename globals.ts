@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ping } from "./commands/ping";
+import { prefix } from "./commands/prefix";
 import { message } from "./events/message";
 import { ready } from "./events/ready";
 import type { Command } from "./types/command";
@@ -10,5 +11,5 @@ export function GetEvents(): Promise<Event<any>[]> {
 }
 
 export async function GetCommands(): Promise<Command[]> {
-	return Promise.all([ping]);
+	return Promise.all([ping, prefix]);
 }
