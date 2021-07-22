@@ -5,13 +5,13 @@ import type { Command } from "../types/command";
 import type { Event } from "../types/event";
 import { DefaultUser } from "../types/user";
 
-const message: Event<Message> = {
-	Name: "message",
+const messageCreate: Event<Message> = {
+	Name: "messageCreate",
 	Config: {
 		Enabled: true,
 	},
 
-	Execute: async (Bot: Client, UserData: Collection, Message: Message) => {
+	Execute: async (Bot: Client, UserData: Collection, Message?: Message) => {
 		if (Message) {
 			let User = await UserData.findOne({ DiscordID: Message.author.id });
 			if (!User) {
@@ -34,12 +34,16 @@ const message: Event<Message> = {
 					return CommandObject.Name.toLowerCase() == Request;
 				});
 
-				if (CommandRequest.length > 0) {
-					CommandRequest[0].Execute(UserData, Message, Args);
+				if (
+					CommandRequest.length > 0 &&
+					CommandRequest[0].Config.Authority <= User.Authority &&
+					CommandRequest[0].Config.Enabled == true
+				) {
+					CommandRequest[0].Execute(Bot, UserData, Message, Args);
 				}
 			}
 		}
 	},
 };
 
-export { message };
+export { messageCreate };
