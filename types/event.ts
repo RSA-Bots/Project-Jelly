@@ -1,9 +1,9 @@
 import type { Client } from "discord.js";
 import type { Collection } from "mongodb";
 export interface Event<T> {
-	Name: string;
-	Config: {
-		Enabled: boolean;
+	name: string;
+	config: {
+		enabled: boolean;
 	};
-	Execute: (Bot: Client, UserData: Collection, Data?: T) => void;
+	execute: (bot: Client, userData: Collection, data?: T) => void;
 }

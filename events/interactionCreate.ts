@@ -1,27 +1,54 @@
 import type { Client, Interaction } from "discord.js";
 import type { Collection } from "mongodb";
-import { GetCommands } from "../globals";
+import { getCommands } from "../globals";
 import type { Command } from "../types/command";
 import type { Event } from "../types/event";
+import { defaultUser } from "../types/user";
 
 const interactionCreate: Event<Interaction> = {
-	Name: "interactionCreate",
-	Config: {
-		Enabled: true,
+	name: "interactionCreate",
+	config: {
+		enabled: true,
 	},
 
-	Execute: async (Bot: Client, UserData: Collection, Interaction?: Interaction) => {
-		if (Interaction) {
-			if (Interaction.isCommand()) {
-				const Commands: Command[] = await GetCommands();
+	execute: async (bot: Client, userData: Collection, interaction?: Interaction) => {
+		if (interaction) {
+			const guild = interaction.guild;
+			const guildMember = interaction.member;
 
-				const CommandRequest = Commands.filter(CommandObject => {
-					return CommandObject.Name.toLowerCase() == Interaction.commandName;
-				});
+			if (guildMember && guild) {
+				let user = await userData.findOne({ id: guildMember.user.id });
+				if (!user) {
+					await userData.insertOne({
+						id: guildMember.user.id,
+						prefix: defaultUser.prefix,
+						authority: defaultUser.authority,
+					});
+					user = await userData.findOne({ id: guildMember.user.id });
+				}
 
-				if (CommandRequest.length > 0) {
-					const Command: Command = CommandRequest[0];
-					Command.Execute(Bot, UserData, Interaction);
+				// Interaction parsing logic
+				if (user && interaction.isCommand()) {
+					const commands: Command[] = await getCommands();
+
+					const query = commands.filter(command => {
+						return command.name.toLowerCase() == interaction.commandName;
+					});
+
+					if (query.length > 0) {
+						const request = query[0];
+
+						if (request.interaction.enabled) {
+							request.execute(bot, userData, interaction);
+						} else {
+							await interaction
+								.reply({
+									content: "You do not meet the requirements to use this command.",
+									ephemeral: true,
+								})
+								.catch(Error => console.log(Error));
+						}
+					}
 				}
 			}
 		}

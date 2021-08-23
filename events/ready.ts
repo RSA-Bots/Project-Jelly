@@ -1,12 +1,12 @@
 import type { Event } from "../types/event";
 
 const ready: Event<void> = {
-	Name: "ready",
-	Config: {
-		Enabled: true,
+	name: "ready",
+	config: {
+		enabled: true,
 	},
 
-	Execute: () => {
+	execute: () => {
 		console.log("Bot is online");
 	},
 };

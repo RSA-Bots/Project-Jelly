@@ -1,12 +1,12 @@
 export interface User {
-	DiscordID?: string;
-	Prefix: "!";
-	Authority: 0;
+	id?: string;
+	prefix: "!";
+	authority: 0;
 }
 
-const DefaultUser: User = {
-	Prefix: "!",
-	Authority: 0,
+const defaultUser: User = {
+	prefix: "!",
+	authority: 0,
 };
 
-export { DefaultUser };
+export { defaultUser };

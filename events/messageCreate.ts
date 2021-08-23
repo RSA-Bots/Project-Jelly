@@ -1,45 +1,51 @@
 import type { Client, Message } from "discord.js";
 import type { Collection } from "mongodb";
-import { GetCommands } from "../globals";
+import { getCommands } from "../globals";
 import type { Command } from "../types/command";
 import type { Event } from "../types/event";
-import { DefaultUser } from "../types/user";
+import { defaultUser } from "../types/user";
 
 const messageCreate: Event<Message> = {
-	Name: "messageCreate",
-	Config: {
-		Enabled: true,
+	name: "messageCreate",
+	config: {
+		enabled: true,
 	},
 
-	Execute: async (Bot: Client, UserData: Collection, Message?: Message) => {
-		if (Message) {
-			let User = await UserData.findOne({ DiscordID: Message.author.id });
-			if (!User) {
-				await UserData.insertOne({
-					DiscordID: Message.author.id,
-					Prefix: DefaultUser.Prefix,
-					Authority: DefaultUser.Authority,
-				});
-				User = await UserData.findOne({ DiscordID: Message.author.id });
-			}
+	execute: async (bot: Client, userData: Collection, message?: Message) => {
+		if (message && message.author.bot == false) {
+			const guild = message.guild;
+			const guildMember = message.member;
 
-			if (User && Message.content.startsWith(User.Prefix)) {
-				const Commands: Command[] = await GetCommands();
+			if (guild && guildMember) {
+				let user = await userData.findOne({ id: message.author.id });
+				if (!user) {
+					await userData.insertOne({
+						id: message.author.id,
+						prefix: defaultUser.prefix,
+						authority: defaultUser.authority,
+					});
+					user = await userData.findOne({ id: message.author.id });
+				}
 
-				const Content: string[] = Message.content.split(User.Prefix);
-				const Args: string[] = Content[1].split(" ");
-				const Request: string | undefined = Args.shift()?.toLowerCase();
+				// Command parsing logic
+				if (user && message.content.startsWith(user.prefix)) {
+					const commands: Command[] = await getCommands();
 
-				const CommandRequest = Commands.filter(CommandObject => {
-					return CommandObject.Name.toLowerCase() == Request;
-				});
+					const content: string[] = message.content.split(user.prefix);
+					const args: string[] = content[1].split(" ");
+					const request: string | undefined = args.shift()?.toLowerCase();
 
-				if (
-					CommandRequest.length > 0 &&
-					CommandRequest[0].Config.Authority <= User.Authority &&
-					CommandRequest[0].Config.Enabled == true
-				) {
-					CommandRequest[0].Execute(Bot, UserData, Message, Args);
+					const query = commands.filter(command => {
+						return command.name.toLowerCase() == request;
+					});
+
+					if (query.length > 0) {
+						const request = query[0];
+
+						if (request.message.authority <= user.authority && request.message.enabled) {
+							request.execute(bot, userData, message, args);
+						}
+					}
 				}
 			}
 		}

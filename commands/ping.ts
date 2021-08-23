@@ -3,26 +3,31 @@ import type { Collection } from "mongodb";
 import type { Command } from "../types/command";
 
 const ping: Command = {
-	Name: "ping",
-	Description: "Sends back ping",
-	Options: [],
-	Config: {
-		Enabled: true,
-		Authority: 0,
-		IsSlashCommand: false,
+	name: "ping",
+	interaction: {
+		description: "Sends back ping.",
+		options: [],
+		permissions: [],
+		defaultPermission: false,
+		enabled: true,
 	},
+	message: {
+		authority: 0,
+		enabled: true,
+	},
+	permissions: [],
 
-	Execute: async (Bot: Client, UserData?: Collection, Data?: Message | Interaction) => {
-		if (Data) {
-			switch (Data.type) {
+	execute: async (bot: Client, userData?: Collection, data?: Message | Interaction) => {
+		if (data) {
+			switch (data.type) {
 				case "APPLICATION_COMMAND": {
-					const Interaction = Data as CommandInteraction;
-					await Interaction.reply("Hello");
+					const interaction = data as CommandInteraction;
+					await interaction.reply("Hello");
 					break;
 				}
 				default: {
-					const Message = Data as Message;
-					await Message.reply("Holo");
+					const message = data as Message;
+					await message.reply("Holo");
 				}
 			}
 		}
