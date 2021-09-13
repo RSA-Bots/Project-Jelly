@@ -5,6 +5,6 @@ This bot provides slash command functionality to an ever-growing repotoire of ut
 
 #### Current todo list:
 - [ ] Suggestions/polling system
-- [ ] Profiles w/ Roblox linking
+- [ ] Ticket system
 
 > Functionality originally provided for Roblox Dev Assistance Discord server.
