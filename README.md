@@ -4,7 +4,8 @@
 This bot provides slash command functionality to an ever-growing repotoire of utilities that can help bring a server to life.
 
 #### Current todo list:
-- [ ] Suggestions/polling system
-- [ ] Ticket system
+- [ ] Suggestions/polling
+- [ ] Tickets
+- [ ] Tags
 
 > Functionality originally provided for Roblox Dev Assistance Discord server.
