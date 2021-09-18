@@ -4,6 +4,7 @@ import { Collection, Document, MongoClient } from "mongodb";
 import settings from "./settings.json";
 import type { Command } from "./types/command";
 import { Event, EventTypes, linkEvent } from "./types/event";
+import { defaultUser } from "./types/user";
 
 let client: Client;
 
@@ -30,14 +31,6 @@ export function getCollection(collection: string): Collection<Document> | undefi
 		return database.db("data").collection(collection);
 	}
 }
-
-interface User {
-	prefix: string;
-}
-
-const defaultUser: User = {
-	prefix: "!",
-};
 
 export async function getUser(userId: string): Promise<Document | null | void> {
 	const users = getCollection("users");
