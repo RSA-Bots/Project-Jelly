@@ -10,7 +10,7 @@ const messageCreate: Event<"Message"> = {
 	callback: async (message: Message) => {
 		if (message.author.bot == false) {
 			const user = (await getUser(message.author.id)) as Document;
-			if (message.content.startsWith(user.prefix)) {
+			if (user && message.content.startsWith(user.prefix)) {
 				const commands = await getCommands();
 
 				const content: string = message.content.split(user.prefix)[1];

@@ -33,8 +33,10 @@ export function getCollection(collection: string): Collection<Document> | undefi
 }
 
 export async function getUser(userId: string): Promise<Document | null | void> {
-	const users = getCollection("users");
-	if (users) {
+	let users = getCollection("users");
+	if (!users) {
+		users = getCollection("users");
+	} else {
 		let user = await users.findOne({ id: userId });
 		if (!user) {
 			users

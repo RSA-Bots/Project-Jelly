@@ -1,5 +1,4 @@
 import type { CommandInteraction, Interaction, Message } from "discord.js";
-import { Permissions } from "discord.js";
 import type { Command } from "../types/command";
 
 const ping: Command = {
@@ -8,13 +7,13 @@ const ping: Command = {
 		description: "Sends back ping.",
 		options: [],
 		permissions: [],
-		defaultPermission: false,
+		defaultPermission: true,
 		enabled: true,
 	},
 	message: {
 		enabled: true,
 	},
-	permissions: [Permissions.FLAGS.ADMINISTRATOR],
+	permissions: [],
 
 	callback: async (data: Message | Interaction) => {
 		switch (data.type) {
