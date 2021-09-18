@@ -1,5 +1,5 @@
-import type { Client, CommandInteraction, Interaction, Message } from "discord.js";
-import type { Collection } from "mongodb";
+import type { CommandInteraction, Interaction, Message } from "discord.js";
+import { Permissions } from "discord.js";
 import type { Command } from "../types/command";
 
 const ping: Command = {
@@ -12,26 +12,25 @@ const ping: Command = {
 		enabled: true,
 	},
 	message: {
-		authority: 0,
 		enabled: true,
 	},
-	permissions: [],
+	permissions: [Permissions.FLAGS.ADMINISTRATOR],
 
-	execute: async (bot: Client, userData?: Collection, data?: Message | Interaction) => {
-		if (data) {
-			switch (data.type) {
-				case "APPLICATION_COMMAND": {
-					const interaction = data as CommandInteraction;
-					await interaction.reply("Hello");
-					break;
-				}
-				default: {
-					const message = data as Message;
-					await message.reply("Holo");
-				}
+	callback: async (data: Message | Interaction) => {
+		switch (data.type) {
+			case "APPLICATION_COMMAND": {
+				const interaction = data as CommandInteraction;
+
+				await interaction.reply(`Pinged by user id: ${interaction.user.id}`).catch(console.log);
+				break;
+			}
+			default: {
+				const message = data as Message;
+
+				await message.reply(`Pinged by user id: ${message.member?.id as string}`).catch(console.log);
 			}
 		}
 	},
 };
 
-export { ping };
+export default ping;

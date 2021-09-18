@@ -1,29 +1,25 @@
-import type { Client, Role } from "discord.js";
-import type { Collection } from "mongodb";
+import type { Role } from "discord.js";
 import type { Event } from "../types/event";
 
-const roleDelete: Event<Role> = {
+const roleDelete: Event<"Role"> = {
 	name: "roleDelete",
-	config: {
-		enabled: true,
-	},
+	once: false,
 
-	execute: async (bot: Client, userData: Collection, role?: Role) => {
+	callback: async (role: Role) => {
 		if (role) {
 			const guild = role.guild;
-			const slashCommands = guild.commands.fetch();
 
-			for (const slashCommand of (await slashCommands).map(command => command)) {
+			for (const slashCommand of (await guild.commands.fetch()).map(command => command)) {
 				if (await slashCommand.permissions.has({ permissionId: role.id })) {
 					void slashCommand.permissions
 						.remove({
 							roles: role.id,
 						})
-						.catch(error => console.log(error));
+						.catch(console.log);
 				}
 			}
 		}
 	},
 };
 
-export { roleDelete };
+export default roleDelete;

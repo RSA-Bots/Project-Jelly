@@ -1,21 +1,17 @@
-import type { Client, Role } from "discord.js";
-import type { Collection } from "mongodb";
+import type { Role } from "discord.js";
 import { getCommands } from "../globals";
 import type { Event } from "../types/event";
 
-const roleCreate: Event<Role> = {
+const roleCreate: Event<"Role"> = {
 	name: "roleCreate",
-	config: {
-		enabled: true,
-	},
+	once: false,
 
-	execute: async (bot: Client, userData: Collection, role?: Role) => {
+	callback: async (role: Role) => {
 		if (role) {
 			const guild = role.guild;
-			const slashCommands = guild.commands.fetch();
 			const commands = await getCommands();
 
-			for (const slashCommand of (await slashCommands).map(command => command)) {
+			for (const slashCommand of (await guild.commands.fetch()).map(command => command)) {
 				const command = commands.find(command => slashCommand.name == command.name);
 
 				if (command && command.permissions) {
@@ -37,7 +33,7 @@ const roleCreate: Event<Role> = {
 									},
 								],
 							})
-							.catch(error => console.log(error));
+							.catch(console.log);
 					}
 				}
 			}
@@ -45,4 +41,4 @@ const roleCreate: Event<Role> = {
 	},
 };
 
-export { roleCreate };
+export default roleCreate;

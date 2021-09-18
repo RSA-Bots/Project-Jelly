@@ -1,21 +1,17 @@
-import type { Client, Role } from "discord.js";
-import type { Collection } from "mongodb";
+import type { Role } from "discord.js";
 import { getCommands } from "../globals";
 import type { Event } from "../types/event";
 
-const roleUpdate: Event<Role> = {
+const roleUpdate: Event<"Role"> = {
 	name: "roleUpdate",
-	config: {
-		enabled: true,
-	},
+	once: false,
 
-	execute: async (bot: Client, userData: Collection, oldRole?: Role, newRole?: Role) => {
+	callback: async (oldRole: Role, newRole: Role) => {
 		if (oldRole && newRole) {
 			const guild = newRole.guild;
-			const slashCommands = guild.commands.fetch();
 			const commands = await getCommands();
 
-			for (const slashCommand of (await slashCommands).map(command => command)) {
+			for (const slashCommand of (await guild.commands.fetch()).map(command => command)) {
 				const command = commands.find(command => slashCommand.name == command.name);
 
 				if (command && command.permissions) {
@@ -51,4 +47,4 @@ const roleUpdate: Event<Role> = {
 	},
 };
 
-export { roleUpdate };
+export default roleUpdate;

@@ -1,50 +1,40 @@
-import type { Client, Message } from "discord.js";
-import type { Collection } from "mongodb";
-import { getCommands } from "../globals";
-import type { Command } from "../types/command";
+import type { Message } from "discord.js";
+import type { Document } from "mongodb";
+import { getCommands, getUser } from "../globals";
 import type { Event } from "../types/event";
-import { defaultUser } from "../types/user";
 
-const messageCreate: Event<Message> = {
+const messageCreate: Event<"Message"> = {
 	name: "messageCreate",
-	config: {
-		enabled: true,
-	},
+	once: false,
 
-	execute: async (bot: Client, userData: Collection, message?: Message) => {
-		if (message && message.author.bot == false) {
-			const guild = message.guild;
-			const guildMember = message.member;
+	callback: async (message: Message) => {
+		if (message.author.bot == false) {
+			const user = (await getUser(message.author.id)) as Document;
+			if (message.content.startsWith(user.prefix)) {
+				const commands = await getCommands();
 
-			if (guild && guildMember) {
-				let user = await userData.findOne({ id: message.author.id });
-				if (!user) {
-					await userData.insertOne({
-						id: message.author.id,
-						prefix: defaultUser.prefix,
-						authority: defaultUser.authority,
-					});
-					user = await userData.findOne({ id: message.author.id });
-				}
+				const content: string = message.content.split(user.prefix)[1];
+				const args: string[] = content.split(" ");
+				const request: string | undefined = args.shift()?.toLowerCase();
 
-				// Command parsing logic
-				if (user && message.content.startsWith(user.prefix)) {
-					const commands: Command[] = await getCommands();
+				const query = commands.filter(command => {
+					return command.name.toLowerCase() == request;
+				});
 
-					const content: string[] = message.content.split(user.prefix);
-					const args: string[] = content[1].split(" ");
-					const request: string | undefined = args.shift()?.toLowerCase();
+				if (query.length > 0) {
+					const request = query[0];
 
-					const query = commands.filter(command => {
-						return command.name.toLowerCase() == request;
-					});
+					let hasAllPermissions = true;
+					if (request.permissions) {
+						request.permissions.forEach(permission => {
+							if (message.member && !message.member.permissions.has(permission)) {
+								hasAllPermissions = false;
+							}
+						});
+					}
 
-					if (query.length > 0) {
-						const request = query[0];
-
-						if (request.message.authority <= user.authority && request.message.enabled) {
-							request.execute(bot, userData, message, args);
-						}
+					if (request.message.enabled && hasAllPermissions) {
+						request.callback(message, args);
 					}
 				}
 			}
@@ -52,4 +42,4 @@ const messageCreate: Event<Message> = {
 	},
 };
 
-export { messageCreate };
+export default messageCreate;

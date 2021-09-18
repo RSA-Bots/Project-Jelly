@@ -1,36 +1,24 @@
-import { Client, Intents } from "discord.js";
-import { MongoClient } from "mongodb";
-import { load } from "./commands/load";
-import { getEvents } from "./globals";
-import Settings from "./settings.json";
+import { getClient, getCommands, getDatabase, linkEvents, linkSlashCommands } from "./globals";
+import settings from "./settings.json";
 
-const Hook = async () => {
-	const bot = new Client({
-		intents: [
-			Intents.FLAGS.GUILDS,
-			Intents.FLAGS.GUILD_MESSAGES,
-			Intents.FLAGS.GUILD_INTEGRATIONS,
-			Intents.FLAGS.GUILD_MEMBERS,
-		],
-	});
+const hook = async () => {
+	const client = getClient();
 
-	const mongo = new MongoClient(Settings.MONGO_TOKEN);
+	await getDatabase()
+		.then(() => console.log("Database connection has been established."))
+		.catch(console.log);
+	await linkEvents()
+		.then(() => console.log("Client events have been imported and linked."))
+		.catch(console.log);
 
-	const connection = await mongo.connect();
-	const userData = connection.db("data").collection("users");
+	await client.login(settings.botToken).catch(console.log);
 
-	const events = await getEvents();
-	events.forEach(function (event) {
-		bot.on(event.name, function (...data) {
-			if (event.config.enabled) {
-				void event.execute(bot, userData, ...data);
-			}
-		});
-	});
-
-	void bot.login(Settings.BOT_TOKEN).then(() => {
-		void load.execute(bot, userData);
-	});
+	await getCommands()
+		.then(() => console.log("Commands have been imported and initialized."))
+		.catch(console.log);
+	await linkSlashCommands()
+		.then(() => console.log("Slash commands have been loaded onto all guilds."))
+		.catch(console.log);
 };
 
-void Hook();
+hook().catch(console.log);

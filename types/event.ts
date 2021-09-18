@@ -1,9 +1,28 @@
-import type { Client } from "discord.js";
-import type { Collection } from "mongodb";
-export interface Event<T> {
+import type { Interaction, Message, Role } from "discord.js";
+import { getClient } from "../globals";
+
+export interface EventTypes {
+	Message: Message;
+	Interaction: Interaction;
+	Role: Role;
+	void: void;
+}
+export interface Event<T extends keyof EventTypes> {
 	name: string;
-	config: {
-		enabled: boolean;
-	};
-	execute: (bot: Client, userData: Collection, data?: T) => void;
+	once: boolean;
+	callback: (...data: EventTypes[T][]) => void;
+}
+
+export function linkEvent<T extends keyof EventTypes>(
+	name: string,
+	once: boolean,
+	callback: (...data: EventTypes[T][]) => void
+): void {
+	const client = getClient();
+
+	if (once) {
+		client.once(name, callback);
+	} else {
+		client.on(name, callback);
+	}
 }
