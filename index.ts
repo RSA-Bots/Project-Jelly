@@ -11,13 +11,16 @@ const hook = async () => {
 		.then(() => console.log("Client events have been imported and linked."))
 		.catch(console.log);
 
-	await client.login(settings.botToken).catch(console.log);
-
-	await getCommands()
-		.then(() => console.log("Commands have been imported and initialized."))
-		.catch(console.log);
-	await linkSlashCommands()
-		.then(() => console.log("Slash commands have been loaded onto all guilds."))
+	client
+		.login(settings.botToken)
+		.then(async () => {
+			await getCommands()
+				.then(() => console.log("Commands have been imported and initialized."))
+				.catch(console.log);
+			await linkSlashCommands()
+				.then(() => console.log("Slash commands have been loaded onto all guilds."))
+				.catch(console.log);
+		})
 		.catch(console.log);
 };
 

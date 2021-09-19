@@ -1,4 +1,3 @@
-import type { CommandInteraction, Interaction, Message } from "discord.js";
 import type { Command } from "../types/command";
 
 const ping: Command = {
@@ -9,27 +8,18 @@ const ping: Command = {
 		permissions: [],
 		defaultPermission: true,
 		enabled: true,
+		callback: async interaction => {
+			await interaction.reply(`Pinged by user id: \`\`${interaction.user.id}\`\``).catch(console.log);
+		},
 	},
 	message: {
 		enabled: true,
+		callback: async (message, args) => {
+			console.log(args);
+			await message.reply(`Pinged by user id: \`\`${message.member?.id as string}\`\``).catch(console.log);
+		},
 	},
 	permissions: [],
-
-	callback: async (data: Message | Interaction) => {
-		switch (data.type) {
-			case "APPLICATION_COMMAND": {
-				const interaction = data as CommandInteraction;
-
-				await interaction.reply(`Pinged by user id: ${interaction.user.id}`).catch(console.log);
-				break;
-			}
-			default: {
-				const message = data as Message;
-
-				await message.reply(`Pinged by user id: ${message.member?.id as string}`).catch(console.log);
-			}
-		}
-	},
 };
 
 export default ping;

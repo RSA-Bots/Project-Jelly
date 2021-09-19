@@ -82,7 +82,7 @@ export async function getCommands(): Promise<Command[]> {
 export async function linkSlashCommands(): Promise<void> {
 	const interactions: ApplicationCommandData[] = [];
 	for (const command of commands) {
-		if (command.interaction.enabled) {
+		if (command.interaction && command.interaction.enabled) {
 			interactions.push({
 				name: command.name,
 				description: command.interaction.description,
@@ -98,7 +98,7 @@ export async function linkSlashCommands(): Promise<void> {
 			for (const slashCommand of (await guild.commands.set(interactions)).map(command => command)) {
 				const command = commands.find(command => command.name == slashCommand.name);
 
-				if (command && command.interaction.permissions) {
+				if (command && command.interaction && command.interaction.permissions) {
 					const permissions: ApplicationCommandPermissionData[] = [];
 
 					command.interaction.permissions.forEach(permission => {

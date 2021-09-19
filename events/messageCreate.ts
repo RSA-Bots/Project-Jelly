@@ -18,7 +18,7 @@ const messageCreate: Event<"Message"> = {
 				const request: string | undefined = args.shift()?.toLowerCase();
 
 				const query = commands.filter(command => {
-					return command.name.toLowerCase() == request;
+					return command.name.toLowerCase() == request && command.message && command.message.enabled;
 				});
 
 				if (query.length > 0) {
@@ -33,8 +33,8 @@ const messageCreate: Event<"Message"> = {
 						});
 					}
 
-					if (request.message.enabled && hasAllPermissions) {
-						request.callback(message, args);
+					if (request.message && hasAllPermissions) {
+						request.message.callback(message, args);
 					}
 				}
 			}

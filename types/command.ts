@@ -1,22 +1,23 @@
 import type {
 	ApplicationCommandOption,
 	ApplicationCommandPermissionData,
-	Interaction,
+	CommandInteraction,
 	Message,
 	PermissionResolvable,
 } from "discord.js";
 export interface Command {
 	name: string;
-	interaction: {
+	interaction?: {
 		description: string;
 		options: ApplicationCommandOption[];
 		permissions?: ApplicationCommandPermissionData[];
 		defaultPermission: boolean;
 		enabled: boolean;
+		callback: (interaction: CommandInteraction) => void;
 	};
-	message: {
+	message?: {
 		enabled: boolean;
+		callback: (message: Message, args: string[]) => void;
 	};
 	permissions?: PermissionResolvable[];
-	callback: (...args: [Message | Interaction, string[]?]) => void;
 }

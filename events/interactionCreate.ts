@@ -12,14 +12,14 @@ const interactionCreate: Event<"Interaction"> = {
 				const commands = await getCommands();
 
 				const query = commands.filter(command => {
-					return command.name.toLowerCase() == interaction.commandName;
+					return command.name.toLowerCase() == interaction.commandName && command.interaction;
 				});
 
 				if (query.length > 0) {
 					const request = query[0];
 
-					if (request.interaction.enabled) {
-						request.callback(interaction);
+					if (request.interaction) {
+						request.interaction.callback(interaction);
 					}
 				}
 			}
