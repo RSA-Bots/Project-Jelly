@@ -1,3 +1,4 @@
+import { Permissions } from "discord.js";
 import type { Command } from "../types/command";
 
 const ping: Command = {
@@ -6,7 +7,7 @@ const ping: Command = {
 		description: "Sends back ping.",
 		options: [],
 		permissions: [],
-		defaultPermission: true,
+		defaultPermission: false,
 		enabled: true,
 		callback: async interaction => {
 			await interaction.reply(`Pinged by user id: \`\`${interaction.user.id}\`\``).catch(console.log);
@@ -15,11 +16,10 @@ const ping: Command = {
 	message: {
 		enabled: true,
 		callback: async (message, args) => {
-			console.log(args);
 			await message.reply(`Pinged by user id: \`\`${message.member?.id as string}\`\``).catch(console.log);
 		},
 	},
-	permissions: [],
+	permissions: [Permissions.FLAGS.ADMINISTRATOR],
 };
 
 export default ping;

@@ -105,22 +105,15 @@ export async function linkSlashCommands(): Promise<void> {
 						permissions.push(permission);
 					});
 
-					if (command.permissions) {
-						for (const role of (await guild.roles.fetch()).map(role => role)) {
-							let hasAllPermissions = true;
-							for (const permission of command.permissions) {
-								if (!role.permissions.has(permission)) {
-									hasAllPermissions = false;
-								}
-							}
+					for (const role of (await guild.roles.fetch()).map(role => role)) {
+						const hasPermissions = command.permissions ? role.permissions.has(command.permissions) : false;
 
-							if (hasAllPermissions) {
-								permissions.push({
-									id: role.id,
-									type: "ROLE",
-									permission: true,
-								});
-							}
+						if (hasPermissions) {
+							permissions.push({
+								id: role.id,
+								type: "ROLE",
+								permission: true,
+							});
 						}
 					}
 

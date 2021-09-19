@@ -24,16 +24,11 @@ const messageCreate: Event<"Message"> = {
 				if (query.length > 0) {
 					const request = query[0];
 
-					let hasAllPermissions = true;
-					if (request.permissions) {
-						request.permissions.forEach(permission => {
-							if (message.member && !message.member.permissions.has(permission)) {
-								hasAllPermissions = false;
-							}
-						});
-					}
+					const hasPermissions = request.permissions
+						? message.member?.permissions.has(request.permissions)
+						: true;
 
-					if (request.message && hasAllPermissions) {
+					if (request.message && hasPermissions) {
 						request.message.callback(message, args);
 					}
 				}
