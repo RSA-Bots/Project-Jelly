@@ -17,19 +17,15 @@ const messageCreate: Event<"Message"> = {
 				const args: string[] = content.split(" ");
 				const request: string | undefined = args.shift()?.toLowerCase();
 
-				const query = commands.filter(command => {
-					return command.name.toLowerCase() == request && command.message && command.message.enabled;
-				});
+				const query = commands.find(command => command.name.toLowerCase() == request);
 
-				if (query.length > 0) {
-					const request = query[0];
-
-					const hasPermissions = request.permissions
-						? message.member?.permissions.has(request.permissions)
+				if (query && query.message) {
+					const hasPermissions = query.permissions
+						? message.member?.permissions.has(query.permissions)
 						: true;
 
-					if (request.message && hasPermissions) {
-						request.message.callback(message, args);
+					if (hasPermissions) {
+						query.message.callback(message, args);
 					}
 				}
 			}

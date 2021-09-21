@@ -65,16 +65,20 @@ export async function linkEvents(): Promise<void> {
 
 const commands: Command[] = [];
 
+export async function linkCommands(): Promise<void> {
+	const commandFiles = readdirSync("./dist/commands");
+	for (const command of commandFiles) {
+		await import(`./commands/${command}`)
+			.then(({ default: command }) => {
+				commands.push(command);
+			})
+			.catch(console.log);
+	}
+}
+
 export async function getCommands(): Promise<Command[]> {
 	if (commands.length == 0) {
-		const commandFiles = readdirSync("./dist/commands");
-		for (const command of commandFiles) {
-			await import(`./commands/${command}`)
-				.then(({ default: command }) => {
-					commands.push(command);
-				})
-				.catch(console.log);
-		}
+		await linkCommands().catch(console.log);
 	}
 	return commands;
 }

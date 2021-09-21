@@ -1,4 +1,4 @@
-import { getClient, getCommands, getDatabase, linkEvents, linkSlashCommands } from "./globals";
+import { getClient, getDatabase, linkEvents } from "./globals";
 import settings from "./settings.json";
 
 const hook = async () => {
@@ -11,17 +11,7 @@ const hook = async () => {
 		.then(() => console.log("Client events have been imported and linked."))
 		.catch(console.log);
 
-	client
-		.login(settings.botToken)
-		.then(async () => {
-			await getCommands()
-				.then(() => console.log("Commands have been imported and initialized."))
-				.catch(console.log);
-			await linkSlashCommands()
-				.then(() => console.log("Slash commands have been loaded onto all guilds."))
-				.catch(console.log);
-		})
-		.catch(console.log);
+	client.login(settings.botToken).catch(console.log);
 };
 
 hook().catch(console.log);

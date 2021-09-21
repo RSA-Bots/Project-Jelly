@@ -15,12 +15,9 @@ const roleUpdate: Event<"Role"> = {
 				const command = commands.find(command => slashCommand.name == command.name);
 
 				if (command && command.permissions) {
-					let hasAllPermissions = true;
-					for (const permission of command.permissions) {
-						if (!newRole.permissions.has(permission)) {
-							hasAllPermissions = false;
-						}
-					}
+					const hasAllPermissions = command.permissions
+						? newRole.permissions.has(command.permissions)
+						: false;
 
 					if (hasAllPermissions) {
 						void slashCommand.permissions
