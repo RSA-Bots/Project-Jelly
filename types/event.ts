@@ -1,17 +1,17 @@
 import type { ButtonInteraction, CommandInteraction, Message, Role } from "discord.js";
 import { getClient } from "../globals";
 
-export interface EventTypes {
+export type EventTypes = {
 	Message: Message;
 	Interaction: CommandInteraction | ButtonInteraction;
 	Role: Role;
 	void: void;
-}
-export interface Event<T extends keyof EventTypes> {
+};
+export type Event<T extends keyof EventTypes> = {
 	name: string;
 	once: boolean;
 	callback: (...data: EventTypes[T][]) => void;
-}
+};
 
 export function linkEvent<T extends keyof EventTypes>(
 	name: string,

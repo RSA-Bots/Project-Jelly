@@ -27,13 +27,13 @@ const ping: Command = {
 					menus.push(menu.object);
 				});
 
-				const selectionRow = new MessageActionRow().addComponents(menus);
 				const buttonRow = new MessageActionRow().addComponents(buttons);
+				const selectionRow = new MessageActionRow().addComponents(menus);
 
 				await interaction
 					.reply({
 						content: `Pinged by user id: \`\`${interaction.user.id}\`\``,
-						components: [selectionRow, buttonRow],
+						components: [buttonRow, selectionRow],
 					})
 					.catch(console.log);
 			}
@@ -56,7 +56,7 @@ const ping: Command = {
 	menus: [
 		{
 			object: new MessageSelectMenu()
-				.setCustomId("Test")
+				.setCustomId("Test2")
 				.setPlaceholder("Select your choice.")
 				.addOptions([
 					{

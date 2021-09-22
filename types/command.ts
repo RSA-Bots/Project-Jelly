@@ -9,7 +9,8 @@ import type {
 	PermissionResolvable,
 	SelectMenuInteraction,
 } from "discord.js";
-export interface Command {
+
+export type Command = {
 	name: string;
 	interaction?: {
 		description: string;
@@ -32,4 +33,4 @@ export interface Command {
 		callback: (interaction: SelectMenuInteraction) => void;
 	}[];
 	permissions?: PermissionResolvable[];
-}
+};
