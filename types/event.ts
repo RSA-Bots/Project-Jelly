@@ -1,9 +1,9 @@
-import type { ButtonInteraction, CommandInteraction, Message, Role } from "discord.js";
+import type { Interaction, Message, Role } from "discord.js";
 import { getClient } from "../globals";
 
 export type EventTypes = {
 	Message: Message;
-	Interaction: CommandInteraction | ButtonInteraction;
+	Interaction: Interaction;
 	Role: Role;
 	void: void;
 };

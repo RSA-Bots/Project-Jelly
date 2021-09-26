@@ -4,6 +4,7 @@ import { Collection, Document, MongoClient } from "mongodb";
 import settings from "./settings.json";
 import type { Command } from "./types/command";
 import { Event, EventTypes, linkEvent } from "./types/event";
+import { defaultGuild } from "./types/guild";
 import { defaultUser } from "./types/user";
 
 let client: Client;
@@ -36,30 +37,42 @@ export async function getUser(userId: string): Promise<Document | null | void> {
 	let users = getCollection("users");
 	if (!users) {
 		users = getCollection("users");
-	} else {
-		let user = await users.findOne({ id: userId });
-		if (!user) {
-			users
-				.insertOne({
-					id: userId,
-					prefix: defaultUser.prefix,
-				})
-				.catch(console.log);
-			user = await users.findOne({ id: userId });
-		}
-		return user;
 	}
+	let user = await users?.findOne({ id: userId });
+	if (!user) {
+		await users?.insertOne({
+			id: userId,
+			prefix: defaultUser.prefix,
+		});
+		user = await users?.findOne({ id: userId });
+	}
+	return user;
+}
+
+export async function getGuild(guildId: string): Promise<Document | null | void> {
+	let guilds = getCollection("guilds");
+	if (!guilds) {
+		guilds = getCollection("guilds");
+	}
+	let guild = await guilds?.findOne({ id: guildId });
+	if (!guild) {
+		await guilds?.insertOne({
+			id: guildId,
+			settings: defaultGuild.settings,
+			tickets: defaultGuild.tickets,
+		});
+		guild = guilds?.findOne({ id: guildId });
+	}
+	return guild;
 }
 
 export async function linkEvents(): Promise<void> {
 	const eventFiles = readdirSync("./dist/events/");
 
 	for (const event of eventFiles) {
-		await import(`./events/${event}`)
-			.then(({ default: event }: { default: Event<keyof EventTypes> }) => {
-				linkEvent<keyof EventTypes>(event.name, event.once, event.callback);
-			})
-			.catch(console.log);
+		await import(`./events/${event}`).then(({ default: event }: { default: Event<keyof EventTypes> }) => {
+			linkEvent<keyof EventTypes>(event.name, event.once, event.callback);
+		});
 	}
 }
 
@@ -68,17 +81,15 @@ const commands: Command[] = [];
 export async function linkCommands(): Promise<void> {
 	const commandFiles = readdirSync("./dist/commands");
 	for (const command of commandFiles) {
-		await import(`./commands/${command}`)
-			.then(({ default: command }) => {
-				commands.push(command);
-			})
-			.catch(console.log);
+		await import(`./commands/${command}`).then(({ default: command }) => {
+			commands.push(command);
+		});
 	}
 }
 
 export async function getCommands(): Promise<Command[]> {
 	if (commands.length == 0) {
-		await linkCommands().catch(console.log);
+		await linkCommands();
 	}
 	return commands;
 }
@@ -98,16 +109,17 @@ export async function linkSlashCommands(): Promise<void> {
 
 	for (const guild of (await client.guilds.fetch()).map(guild => client.guilds.cache.get(guild.id))) {
 		if (guild) {
-			await guild.commands.set([]).catch(console.log);
+			await guild.commands.set([]);
 			for (const slashCommand of (await guild.commands.set(interactions)).map(command => command)) {
 				const command = commands.find(command => command.name == slashCommand.name);
 
-				if (command && command.interaction && command.interaction.permissions) {
+				if (command) {
 					const permissions: ApplicationCommandPermissionData[] = [];
-
-					command.interaction.permissions.forEach(permission => {
-						permissions.push(permission);
-					});
+					if (command.interaction && command.interaction.permissions) {
+						command.interaction.permissions.forEach(permission => {
+							permissions.push(permission);
+						});
+					}
 
 					for (const role of (await guild.roles.fetch()).map(role => role)) {
 						const hasPermissions = command.permissions ? role.permissions.has(command.permissions) : false;
@@ -121,11 +133,9 @@ export async function linkSlashCommands(): Promise<void> {
 						}
 					}
 
-					await slashCommand.permissions
-						.set({
-							permissions: permissions,
-						})
-						.catch(console.log);
+					await slashCommand.permissions.set({
+						permissions: permissions,
+					});
 				}
 			}
 		}

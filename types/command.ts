@@ -18,18 +18,18 @@ export type Command = {
 		permissions?: ApplicationCommandPermissionData[];
 		defaultPermission: boolean;
 		enabled: boolean;
-		callback: (interaction: CommandInteraction | ButtonInteraction | SelectMenuInteraction) => void;
+		callback: (interaction: CommandInteraction) => void;
 	};
 	message?: {
 		enabled: boolean;
 		callback: (message: Message, args: string[]) => void;
 	};
 	buttons?: {
-		object: MessageButton;
+		button: MessageButton;
 		callback: (interaction: ButtonInteraction) => void;
 	}[];
 	menus?: {
-		object: MessageSelectMenu;
+		menu: MessageSelectMenu;
 		callback: (interaction: SelectMenuInteraction) => void;
 	}[];
 	permissions?: PermissionResolvable[];

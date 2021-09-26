@@ -15,14 +15,15 @@ const messageCreate: Event<"Message"> = {
 
 				const content: string = message.content.split(user.prefix)[1];
 				const args: string[] = content.split(" ");
-				const request: string | undefined = args.shift()?.toLowerCase();
+				let request: string | undefined = args.shift();
+				if (request) {
+					request = request.toLowerCase();
+				}
 
 				const query = commands.find(command => command.name.toLowerCase() == request);
 
-				if (query && query.message) {
-					const hasPermissions = query.permissions
-						? message.member?.permissions.has(query.permissions)
-						: true;
+				if (query && query.message && message.member) {
+					const hasPermissions = query.permissions ? message.member.permissions.has(query.permissions) : true;
 
 					if (hasPermissions) {
 						query.message.callback(message, args);
