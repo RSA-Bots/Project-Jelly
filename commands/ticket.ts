@@ -92,10 +92,7 @@ const ticket: Command = {
 						}
 
 						const embed = new MessageEmbed()
-							.setAuthor(
-								interaction.user.username + "#" + interaction.user.discriminator,
-								interaction.user.avatarURL() as string
-							)
+							.setAuthor(`<@${interaction.user.id}>`, interaction.user.avatarURL() as string)
 							.addField(
 								interaction.options.getString("title") as string,
 								interaction.options.getString("description") as string,
@@ -108,11 +105,14 @@ const ticket: Command = {
 
 						const user = interaction.options.getUser("user");
 						if (user) {
-							embed.addField("Accused", user.username + "#" + user.discriminator, true);
+							embed.addField("Accused", `<@${user.id}>`, true);
 						}
 						const link = interaction.options.getString("link");
-						if (link) {
-							embed.addField("Incident", link, true);
+						if (
+							link &&
+							(link.startsWith("https://") || link.startsWith("http://") || link.startsWith("www."))
+						) {
+							embed.addField("Incident", `[Link/Screenshot](${link})`, true);
 						}
 
 						embed.addField("Status", "Unresolved", false);

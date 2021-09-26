@@ -1,6 +1,6 @@
 {
 	"name": "JellyBot",
-	"version": "0.0.1a",
+	"version": "0.0.1b",
 	"description": "",
 	"main": "index.js",
 	"scripts": {
