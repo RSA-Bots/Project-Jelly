@@ -10,6 +10,8 @@ const interactionCreate: Event<"Interaction"> = {
 		const bot = interaction.guild?.me;
 		const member = interaction.member as GuildMember;
 		if (
+			interaction.channel &&
+			(interaction.channel.type == "GUILD_TEXT" || interaction.channel.type == "GUILD_PRIVATE_THREAD") &&
 			bot &&
 			bot.permissionsIn(interaction.channel as GuildChannelResolvable).has("VIEW_CHANNEL") &&
 			bot.permissionsIn(interaction.channel as GuildChannelResolvable).has("SEND_MESSAGES")

@@ -64,9 +64,8 @@ const ticket: Command = {
 			switch (interaction.options.getSubcommand(false)) {
 				case "create": {
 					const guild = (await getGuild(interaction.guildId as string)) as Document<guildData> & guildData;
-					const guildInfo = guildCache.find(
-						guild => guild.id == interaction.guild?.id
-					) as Document<guildData> & guildData;
+					const guildInfo = guildCache.find(guild => guild.id == interaction.guildId) as Document<guildData> &
+						guildData;
 
 					if (
 						guild.settings.tickets.createChannel == "" ||
@@ -126,21 +125,18 @@ const ticket: Command = {
 						);
 
 						const bot = interaction.guild?.me;
-						const uploadChannel = ((await interaction.guild?.channels.fetch(
-							guild.settings.tickets.uploadChannel
-						)) ?? interaction.channel) as TextChannel;
+						const uploadChannel =
+							(await interaction.guild?.channels.fetch(guild.settings.tickets.uploadChannel)) ??
+							interaction.channel;
 
 						if (
+							uploadChannel &&
+							uploadChannel.type == "GUILD_TEXT" &&
 							bot &&
 							bot.permissionsIn(uploadChannel as GuildChannelResolvable).has("VIEW_CHANNEL") &&
 							bot.permissionsIn(uploadChannel as GuildChannelResolvable).has("SEND_MESSAGES")
 						) {
-							const message = await uploadChannel.send({
-								content: `Ticket \`\`id: ${newTicket.id}\`\``,
-							});
-
 							const thread = await uploadChannel.threads.create({
-								startMessage: message,
 								name: `Ticket ${newTicket.id}`,
 								autoArchiveDuration: 1440,
 								type: "GUILD_PRIVATE_THREAD",
@@ -148,9 +144,15 @@ const ticket: Command = {
 
 							await thread.members.add(interaction.user);
 
-							await thread.send({
+							const embedMessage = await thread.send({
 								embeds: [embed],
 								components: [row],
+							});
+
+							await embedMessage.pin();
+
+							const message = await uploadChannel.send({
+								content: `Ticket \`\`id: ${newTicket.id}\`\` was created.\nThread: <#${thread.id}>`,
 							});
 
 							await IGuild.updateOne(
@@ -158,7 +160,7 @@ const ticket: Command = {
 								{
 									$set: {
 										"tickets.$.threadId": thread.id,
-										"tickets.$.messageId": message.id,
+										"tickets.$.messageId": embedMessage.id,
 										"tickets.$.channelId": message.channelId,
 									},
 								}
@@ -166,7 +168,7 @@ const ticket: Command = {
 
 							await interaction.reply({
 								ephemeral: true,
-								content: `Your ticket has successfully been created. For reference, your ticket id is: \`\`${newTicket.id}\`\``,
+								content: `Ticket \`\`id: ${newTicket.id}\`\` was created.\nThread: <#${thread.id}>`,
 							});
 						} else {
 							await interaction.reply({
@@ -208,27 +210,29 @@ const ticket: Command = {
 				.setStyle("DANGER")
 				.setDisabled(false),
 			callback: async (interaction: ButtonInteraction): Promise<void> => {
-				const embed = interaction.message.embeds[0] as MessageEmbed;
-				(
-					embed.fields.find(field => field.name == "Status") as EmbedField
-				).value = `Closed by <@${interaction.user.id}>`;
-
-				const ticketId = embed.footer?.text?.split(" ")[1];
-
 				const guild = (await getGuild(interaction.guildId as string)) as Document<guildData> & guildData;
-				const cachedTicket = guild.tickets.find(ticket => ticket.id == (ticketId as string)) as Ticket;
+				const cachedTicket = guild.tickets.find(
+					ticket => ticket.threadId == (interaction.channelId as string)
+				) as Ticket;
 
 				const channel = (await interaction.guild?.channels.fetch(cachedTicket.channelId)) as TextChannel;
 				const thread = (await channel.threads.fetch(cachedTicket.threadId)) as ThreadChannel;
 
-				await interaction.update({
+				const embedMessage = await thread.messages.fetch(cachedTicket.messageId);
+				const embed = embedMessage.embeds[0];
+				const statusField = embed.fields.find(field => field.name == "Status") as EmbedField;
+				statusField.value = `Closed by <@${interaction.user.id}>`;
+
+				await embedMessage.edit({
 					embeds: [embed],
 				});
+
+				await interaction.deferUpdate();
 
 				await thread.setArchived(true);
 
 				await IGuild.updateOne(
-					{ id: interaction.guild?.id, "tickets.id": ticketId },
+					{ id: interaction.guild?.id, "tickets.id": cachedTicket.id },
 					{
 						$set: {
 							"tickets.$.closedBy": {
