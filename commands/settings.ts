@@ -1,6 +1,6 @@
 import { GuildChannel, Permissions } from "discord.js";
-import { getCollection } from "../globals";
 import type { Command } from "../types/command";
+import { IGuild } from "../types/guild";
 
 const settings: Command = {
 	name: "settings",
@@ -46,24 +46,18 @@ const settings: Command = {
 				case "tickets": {
 					switch (interaction.options.getSubcommand(false)) {
 						case "upload": {
-							if (
-								interaction.member &&
-								(interaction.member.permissions as Permissions).has(Permissions.FLAGS.ADMINISTRATOR)
-							) {
+							if (interaction.member && interaction.guild) {
 								const channel = interaction.options.getChannel("channel") as GuildChannel;
-								const channelId = channel ? channel.id : undefined;
+								const channelId = channel ? channel.id : "";
 
-								const guilds = getCollection("guilds");
-								if (guilds) {
-									await guilds.updateOne(
-										{ id: interaction.guildId },
-										{
-											$set: {
-												"settings.tickets.uploadChannel": channelId,
-											},
-										}
-									);
-								}
+								await IGuild.updateOne(
+									{ id: interaction.guild.id },
+									{
+										$set: {
+											"settings.tickets.uploadChannel": channelId,
+										},
+									}
+								);
 
 								if (channelId) {
 									await interaction.reply({
@@ -76,33 +70,22 @@ const settings: Command = {
 										content: "Tickets will now be uploaded to the channel they are created in.",
 									});
 								}
-							} else {
-								await interaction.reply({
-									ephemeral: true,
-									content: `You need the \`\`ADMINISTRATOR\`\` permission to use this command.`,
-								});
 							}
 							break;
 						}
 						case "create": {
-							if (
-								interaction.member &&
-								(interaction.member.permissions as Permissions).has(Permissions.FLAGS.ADMINISTRATOR)
-							) {
+							if (interaction.member && interaction.guild) {
 								const channel = interaction.options.getChannel("channel") as GuildChannel;
-								const channelId = channel ? channel.id : undefined;
+								const channelId = channel ? channel.id : "";
 
-								const guilds = getCollection("guilds");
-								if (guilds) {
-									await guilds.updateOne(
-										{ id: interaction.guildId },
-										{
-											$set: {
-												"settings.tickets.createChannel": channelId,
-											},
-										}
-									);
-								}
+								await IGuild.updateOne(
+									{ id: interaction.guild.id },
+									{
+										$set: {
+											"settings.tickets.createChannel": channelId,
+										},
+									}
+								);
 
 								if (channelId) {
 									await interaction.reply({
@@ -115,11 +98,6 @@ const settings: Command = {
 										content: "Tickets can now be created in any channel messages can be sent.",
 									});
 								}
-							} else {
-								await interaction.reply({
-									ephemeral: true,
-									content: `You need the \`\`ADMINISTRATOR\`\` permission to use this command.`,
-								});
 							}
 							break;
 						}
@@ -129,7 +107,7 @@ const settings: Command = {
 			}
 		},
 	},
-	permissions: [Permissions.FLAGS.ADMINISTRATOR],
+	permissions: [Permissions.FLAGS.MANAGE_GUILD],
 };
 
 export default settings;

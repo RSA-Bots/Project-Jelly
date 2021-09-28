@@ -1,11 +1,18 @@
-import { ApplicationCommandData, ApplicationCommandPermissionData, Client, Intents } from "discord.js";
+import {
+	ApplicationCommandData,
+	ApplicationCommandPermissionData,
+	Client,
+	Guild,
+	Intents,
+	Snowflake,
+} from "discord.js";
 import { readdirSync } from "fs";
-import { Collection, Document, MongoClient } from "mongodb";
+import { connect, Document } from "mongoose";
 import settings from "./settings.json";
 import type { Command } from "./types/command";
 import { Event, EventTypes, linkEvent } from "./types/event";
-import { defaultGuild } from "./types/guild";
-import { defaultUser } from "./types/user";
+import { guildData, IGuild } from "./types/guild";
+import { IUser, userData } from "./types/user";
 
 let client: Client;
 
@@ -18,52 +25,46 @@ export function getClient(): Client {
 	return client;
 }
 
-let database: MongoClient;
-
-export async function getDatabase(): Promise<MongoClient> {
-	if (database == null) {
-		database = await new MongoClient(settings.mongoToken).connect();
-	}
-	return database;
+export async function linkDatabase(): Promise<void> {
+	await connect(settings.mongoToken);
 }
 
-export function getCollection(collection: string): Collection<Document> | undefined {
-	if (database) {
-		return database.db("data").collection(collection);
-	}
+export function getUser(userId: Snowflake): Promise<(Document<userData> & userData) | void> {
+	return IUser.findOne({ id: userId })
+		.then(async user => {
+			if (user) {
+				return user;
+			} else {
+				const newUser = new IUser({
+					id: userId,
+				});
+
+				await newUser.save();
+				return newUser;
+			}
+		})
+		.catch(console.log);
 }
 
-export async function getUser(userId: string): Promise<Document | null | void> {
-	let users = getCollection("users");
-	if (!users) {
-		users = getCollection("users");
-	}
-	let user = await users?.findOne({ id: userId });
-	if (!user) {
-		await users?.insertOne({
-			id: userId,
-			prefix: defaultUser.prefix,
-		});
-		user = await users?.findOne({ id: userId });
-	}
-	return user;
-}
+export const guildCache: (Document<guildData> & guildData)[] = [];
 
-export async function getGuild(guildId: string): Promise<Document | null | void> {
-	let guilds = getCollection("guilds");
-	if (!guilds) {
-		guilds = getCollection("guilds");
-	}
-	let guild = await guilds?.findOne({ id: guildId });
-	if (!guild) {
-		await guilds?.insertOne({
-			id: guildId,
-			settings: defaultGuild.settings,
-			tickets: defaultGuild.tickets,
-		});
-		guild = guilds?.findOne({ id: guildId });
-	}
-	return guild;
+export function getGuild(guildId: Snowflake): Promise<(Document<guildData> & guildData) | void> {
+	return IGuild.findOne({ id: guildId })
+		.then(async guild => {
+			if (guild) {
+				guildCache.push(guild);
+				return guild;
+			} else {
+				const newGuild = new IGuild({
+					id: guildId,
+				});
+
+				guildCache.push(newGuild);
+				await newGuild.save();
+				return newGuild;
+			}
+		})
+		.catch(console.log);
 }
 
 export async function linkEvents(): Promise<void> {
@@ -94,7 +95,7 @@ export async function getCommands(): Promise<Command[]> {
 	return commands;
 }
 
-export async function linkSlashCommands(): Promise<void> {
+export async function linkSlashCommands(guild: Guild): Promise<void> {
 	const interactions: ApplicationCommandData[] = [];
 	for (const command of commands) {
 		if (command.interaction && command.interaction.enabled) {
@@ -107,37 +108,33 @@ export async function linkSlashCommands(): Promise<void> {
 		}
 	}
 
-	for (const guild of (await client.guilds.fetch()).map(guild => client.guilds.cache.get(guild.id))) {
-		if (guild) {
-			await guild.commands.set([]);
-			for (const slashCommand of (await guild.commands.set(interactions)).map(command => command)) {
-				const command = commands.find(command => command.name == slashCommand.name);
+	await guild.commands.set([]);
+	for (const slashCommand of (await guild.commands.set(interactions)).map(command => command)) {
+		const command = commands.find(command => command.name == slashCommand.name);
 
-				if (command) {
-					const permissions: ApplicationCommandPermissionData[] = [];
-					if (command.interaction && command.interaction.permissions) {
-						command.interaction.permissions.forEach(permission => {
-							permissions.push(permission);
-						});
-					}
+		if (command) {
+			const permissions: ApplicationCommandPermissionData[] = [];
+			if (command.interaction && command.interaction.permissions) {
+				command.interaction.permissions.forEach(permission => {
+					permissions.push(permission);
+				});
+			}
 
-					for (const role of (await guild.roles.fetch()).map(role => role)) {
-						const hasPermissions = command.permissions ? role.permissions.has(command.permissions) : false;
+			for (const role of (await guild.roles.fetch()).map(role => role)) {
+				const hasPermissions = command.permissions ? role.permissions.has(command.permissions) : false;
 
-						if (hasPermissions) {
-							permissions.push({
-								id: role.id,
-								type: "ROLE",
-								permission: true,
-							});
-						}
-					}
-
-					await slashCommand.permissions.set({
-						permissions: permissions,
+				if (hasPermissions) {
+					permissions.push({
+						id: role.id,
+						type: "ROLE",
+						permission: true,
 					});
 				}
 			}
+
+			await slashCommand.permissions.set({
+				permissions: permissions,
+			});
 		}
 	}
 }

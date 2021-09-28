@@ -1,19 +1,20 @@
 import type { Snowflake } from "discord-api-types";
 
 export type Ticket = {
-	id: number | string;
-	messageId?: Snowflake;
-	channelId?: Snowflake;
+	id: string;
+	messageId: Snowflake;
+	channelId: Snowflake;
+	threadId: Snowflake;
 	status: string;
 	createdBy: {
 		id: Snowflake;
 		time: string;
 	};
-	acceptedBy?: {
+	openedBy: {
 		id: Snowflake;
 		time: string;
 	};
-	closedBy?: {
+	closedBy: {
 		id: Snowflake;
 		time: string;
 	};

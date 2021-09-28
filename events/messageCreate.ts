@@ -1,7 +1,8 @@
 import type { Message } from "discord.js";
-import type { Document } from "mongodb";
+import type { Document } from "mongoose";
 import { getCommands, getUser } from "../globals";
 import type { Event } from "../types/event";
+import type { userData } from "../types/user";
 
 const messageCreate: Event<"Message"> = {
 	name: "messageCreate",
@@ -9,7 +10,7 @@ const messageCreate: Event<"Message"> = {
 
 	callback: async (message: Message) => {
 		if (message.author.bot == false) {
-			const user = (await getUser(message.author.id)) as Document;
+			const user = (await getUser(message.author.id)) as Document<userData> & userData;
 			if (user && message.content.startsWith(user.prefix)) {
 				const commands = await getCommands();
 

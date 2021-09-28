@@ -1,7 +1,15 @@
-export type User = {
-	prefix: string;
-};
+import type { Snowflake } from "discord-api-types";
+import { model, Schema } from "mongoose";
 
-export const defaultUser: User = {
-	prefix: "!",
-};
+export interface userData {
+	id: Snowflake;
+	prefix: string;
+}
+
+export const IUser = model<userData>(
+	"User",
+	new Schema<userData>({
+		id: { type: String, required: true },
+		prefix: { type: String, default: "!" },
+	})
+);

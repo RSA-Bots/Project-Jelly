@@ -1,11 +1,12 @@
-import type { Interaction, Message, Role } from "discord.js";
+import type { Client, Guild, Interaction, Message, Role } from "discord.js";
 import { getClient } from "../globals";
 
 export type EventTypes = {
 	Message: Message;
 	Interaction: Interaction;
 	Role: Role;
-	void: void;
+	Guild: Guild;
+	Client: Client;
 };
 export type Event<T extends keyof EventTypes> = {
 	name: string;

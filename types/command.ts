@@ -14,7 +14,7 @@ export type Command = {
 	name: string;
 	interaction?: {
 		description: string;
-		options: ApplicationCommandOption[];
+		options?: ApplicationCommandOption[];
 		permissions?: ApplicationCommandPermissionData[];
 		defaultPermission: boolean;
 		enabled: boolean;
@@ -27,10 +27,12 @@ export type Command = {
 	buttons?: {
 		button: MessageButton;
 		callback: (interaction: ButtonInteraction) => void;
+		permissions?: PermissionResolvable[];
 	}[];
 	menus?: {
 		menu: MessageSelectMenu;
 		callback: (interaction: SelectMenuInteraction) => void;
+		permissions?: PermissionResolvable[];
 	}[];
 	permissions?: PermissionResolvable[];
 };
