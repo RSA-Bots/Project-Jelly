@@ -139,7 +139,7 @@ const ticket: Command = {
 								content: `Ticket \`\`id: ${newTicket.id}\`\``,
 							});
 
-							const thread = await (interaction.channel as TextChannel).threads.create({
+							const thread = await uploadChannel.threads.create({
 								startMessage: message,
 								name: `Ticket ${newTicket.id}`,
 								autoArchiveDuration: 1440,
