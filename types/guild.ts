@@ -30,12 +30,8 @@ export const IGuild = model<guildData>(
 					messageId: { type: String, default: "" },
 					channelId: { type: String, default: "" },
 					threadId: { type: String, default: "" },
-					status: { type: String, default: "pending" },
+					status: { type: String, default: "open" },
 					createdBy: {
-						id: { type: String, default: "" },
-						time: { type: String, default: "" },
-					},
-					openedBy: {
 						id: { type: String, default: "" },
 						time: { type: String, default: "" },
 					},

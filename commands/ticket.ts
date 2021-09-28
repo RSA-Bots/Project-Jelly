@@ -3,7 +3,6 @@ import {
 	EmbedField,
 	GuildChannelResolvable,
 	GuildMember,
-	Message,
 	MessageActionRow,
 	MessageButton,
 	MessageEmbed,
@@ -78,29 +77,16 @@ const ticket: Command = {
 							messageId: "",
 							channelId: "",
 							threadId: "",
-							status: "pending",
+							status: "open",
 							createdBy: {
 								id: interaction.user.id,
 								time: new Date().toLocaleString(),
-							},
-							openedBy: {
-								id: "",
-								time: "",
 							},
 							closedBy: {
 								id: "",
 								time: "",
 							},
 						};
-
-						guildInfo.tickets.push(newTicket);
-
-						await IGuild.updateOne(
-							{ id: interaction.guild?.id },
-							{
-								$push: { tickets: newTicket },
-							}
-						);
 
 						const row = new MessageActionRow();
 						if (ticket.buttons) {
@@ -129,21 +115,40 @@ const ticket: Command = {
 						) {
 							embed.addField("Incident", `[Link/Screenshot](${link})`, true);
 						}
+						embed.addField("Status", "Open", false);
 
-						embed.addField("Status", "Pending", false);
+						guildInfo.tickets.push(newTicket);
+						await IGuild.updateOne(
+							{ id: interaction.guild?.id },
+							{
+								$push: { tickets: newTicket },
+							}
+						);
 
-						const uploadChannel = guild.settings.tickets.uploadChannel;
 						const bot = interaction.guild?.me;
+						const uploadChannel = ((await interaction.guild?.channels.fetch(
+							guild.settings.tickets.uploadChannel
+						)) ?? interaction.channel) as TextChannel;
 
 						if (
-							uploadChannel != "" &&
 							bot &&
-							bot.permissionsIn(interaction.channel as GuildChannelResolvable).has("VIEW_CHANNEL") &&
-							bot.permissionsIn(interaction.channel as GuildChannelResolvable).has("SEND_MESSAGES")
+							bot.permissionsIn(uploadChannel as GuildChannelResolvable).has("VIEW_CHANNEL") &&
+							bot.permissionsIn(uploadChannel as GuildChannelResolvable).has("SEND_MESSAGES")
 						) {
-							const message = await (
-								(await interaction.guild?.channels.fetch(uploadChannel)) as TextChannel
-							).send({
+							const message = await uploadChannel.send({
+								content: `Ticket \`\`id: ${newTicket.id}\`\``,
+							});
+
+							const thread = await (interaction.channel as TextChannel).threads.create({
+								startMessage: message,
+								name: `Ticket ${newTicket.id}`,
+								autoArchiveDuration: 1440,
+								type: "GUILD_PRIVATE_THREAD",
+							});
+
+							await thread.members.add(interaction.user);
+
+							await thread.send({
 								embeds: [embed],
 								components: [row],
 							});
@@ -152,6 +157,7 @@ const ticket: Command = {
 								{ id: interaction.guild?.id, "tickets.id": newTicket.id },
 								{
 									$set: {
+										"tickets.$.threadId": thread.id,
 										"tickets.$.messageId": message.id,
 										"tickets.$.channelId": message.channelId,
 									},
@@ -162,30 +168,6 @@ const ticket: Command = {
 								ephemeral: true,
 								content: `Your ticket has successfully been created. For reference, your ticket id is: \`\`${newTicket.id}\`\``,
 							});
-						} else if (uploadChannel == "") {
-							await interaction.reply({
-								embeds: [embed],
-								components: [row],
-							});
-
-							const reply = (await interaction.fetchReply()) as Message;
-
-							if (reply) {
-								await IGuild.updateOne(
-									{ id: interaction.guild?.id, "tickets.id": newTicket.id },
-									{
-										$set: {
-											"tickets.$.messageId": reply.id,
-											"tickets.$.channelId": reply.channelId,
-										},
-									}
-								);
-
-								await interaction.followUp({
-									ephemeral: true,
-									content: `Your ticket has successfully been created. For reference, your ticket id is: \`\`${newTicket.id}\`\``,
-								});
-							}
 						} else {
 							await interaction.reply({
 								ephemeral: true,
@@ -201,92 +183,15 @@ const ticket: Command = {
 					break;
 				}
 				case "view": {
-					if (
-						interaction.member &&
-						interaction.guild &&
-						(interaction.member.permissions as Permissions).has(Permissions.FLAGS.MANAGE_MESSAGES)
-					) {
-						const guild = (await getGuild(interaction.guildId as string)) as Document<guildData> &
-							guildData;
-						const ticketId = interaction.options.getString("id");
-						const cachedTicket = guild.tickets.find(ticket => ticket.id == ticketId);
+					const guild = (await getGuild(interaction.guildId as string)) as Document<guildData> & guildData;
+					const cachedTicket = guild.tickets.find(
+						ticket => ticket.id == (interaction.options.getString("id") as string)
+					);
 
-						if (cachedTicket) {
-							const channel = (await interaction.guild.channels.fetch(
-								cachedTicket.channelId
-							)) as TextChannel;
-							const message = await channel.messages.fetch(cachedTicket.messageId);
-							const uploadChannel = guild.settings.tickets.uploadChannel;
-
-							const bot = interaction.guild.me;
-
-							const repost = {
-								valid: false,
-								messageId: cachedTicket.messageId,
-								channelId: cachedTicket.channelId,
-							};
-
-							if (
-								uploadChannel != "" &&
-								bot &&
-								bot.permissionsIn(interaction.channel as GuildChannelResolvable).has("VIEW_CHANNEL") &&
-								bot.permissionsIn(interaction.channel as GuildChannelResolvable).has("SEND_MESSAGES")
-							) {
-								const newMessage = await (
-									(await interaction.guild.channels.fetch(uploadChannel)) as TextChannel
-								).send({
-									embeds: message.embeds,
-									components: message.components,
-								});
-
-								repost.messageId = newMessage.id;
-								repost.channelId = newMessage.channelId;
-								repost.valid = true;
-
-								await interaction.reply({
-									ephemeral: true,
-									content: `Ticket \`\`id: ${ticketId as string}\`\` has been reposted.`,
-								});
-							} else if (uploadChannel == "") {
-								await interaction.reply({
-									embeds: message.embeds,
-									components: message.components,
-								});
-
-								const reply = (await interaction.fetchReply()) as Message;
-
-								repost.messageId = reply.id;
-								repost.channelId = reply.channelId;
-								repost.valid = true;
-							} else {
-								await interaction.reply({
-									ephemeral: true,
-									content: `Ticket was not reposted because the bot does not have the \`\`SEND_MESSAGES\`\` and \`\`VIEW_CHANNEL\`\` permissions in the upload channel.`,
-								});
-							}
-
-							if (repost.valid) {
-								await IGuild.updateOne(
-									{ id: interaction.guild.id, "tickets.id": ticketId },
-									{
-										$set: {
-											"tickets.$.messageId": repost.messageId,
-											"tickets.$.channelId": repost.channelId,
-										},
-									}
-								);
-								await message.delete();
-							}
-						} else {
-							await interaction.reply({
-								ephemeral: true,
-								content: `No ticket of \`\`id: ${ticketId as string}\`\` exists`,
-							});
-						}
-					} else {
+					if (cachedTicket) {
 						await interaction.reply({
 							ephemeral: true,
-							content: `You need the \`\`MANAGE_MESSAGES\`\` permission to use this command.`,
+							content: `<#${cachedTicket.threadId}>`,
 						});
 					}
 
@@ -297,130 +202,43 @@ const ticket: Command = {
 	},
 	buttons: [
 		{
-			button: new MessageButton().setCustomId("openTicket").setLabel("Open").setStyle("SUCCESS"),
-			callback: async (interaction: ButtonInteraction): Promise<void> => {
-				if (interaction.member && interaction.guild) {
-					const embed = interaction.message.embeds[0] as MessageEmbed;
-					(
-						embed.fields.find(field => field.name == "Status") as EmbedField
-					).value = `Opened by <@${interaction.user.id}>`;
-
-					const rows = interaction.message.components as MessageActionRow[];
-					for (const row of rows) {
-						row.components.forEach(component => {
-							if (component.customId == "openTicket") {
-								component.setDisabled(true);
-							}
-							if (component.customId == "closeTicket") {
-								component.setDisabled(false);
-							}
-						});
-					}
-
-					await interaction.update({
-						embeds: [embed],
-						components: rows,
-					});
-
-					const ticketId = embed.footer?.text?.split(" ")[1];
-
-					const guild = (await getGuild(interaction.guildId as string)) as Document<guildData> & guildData;
-					const cachedTicket = guild.tickets.find(ticket => ticket.id == (ticketId as string)) as Ticket;
-
-					if (cachedTicket.threadId != "") {
-						const channel = (await interaction.guild.channels.fetch(cachedTicket.channelId)) as TextChannel;
-						const thread = await channel.threads.fetch(cachedTicket.threadId);
-
-						if (thread && thread.archived) {
-							await thread.setArchived(false);
-							await thread.setAutoArchiveDuration(1440);
-						} else if (thread) {
-							await thread.setAutoArchiveDuration(1440);
-						}
-					} else {
-						const thread = await (interaction.channel as TextChannel).threads.create({
-							startMessage: interaction.message as Message,
-							name: `Ticket ${ticketId as string}`,
-							autoArchiveDuration: 1440,
-							type: "GUILD_PRIVATE_THREAD",
-						});
-
-						await thread.members.add(interaction.user);
-						await thread.members.add(cachedTicket.createdBy.id);
-
-						cachedTicket.threadId = thread.id;
-					}
-
-					await IGuild.updateOne(
-						{ id: interaction.guild.id, "tickets.id": ticketId },
-						{
-							$set: {
-								"tickets.$.openedBy": {
-									id: interaction.user.id,
-									time: new Date().toLocaleString(),
-								},
-								"tickets.$.status": "open",
-								"tickets.$.threadId": cachedTicket.threadId,
-							},
-						}
-					);
-				}
-			},
-			permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
-		},
-		{
 			button: new MessageButton()
 				.setCustomId("closeTicket")
 				.setLabel("Close")
 				.setStyle("DANGER")
-				.setDisabled(true),
+				.setDisabled(false),
 			callback: async (interaction: ButtonInteraction): Promise<void> => {
-				if (interaction.member && interaction.guild) {
-					const embed = interaction.message.embeds[0] as MessageEmbed;
-					(
-						embed.fields.find(field => field.name == "Status") as EmbedField
-					).value = `Closed by <@${interaction.user.id}>`;
+				const embed = interaction.message.embeds[0] as MessageEmbed;
+				(
+					embed.fields.find(field => field.name == "Status") as EmbedField
+				).value = `Closed by <@${interaction.user.id}>`;
 
-					const rows = interaction.message.components as MessageActionRow[];
-					for (const row of rows) {
-						row.components.forEach(component => {
-							if (component.customId == "closeTicket") {
-								component.setDisabled(true);
-							}
-							if (component.customId == "openTicket") {
-								component.setDisabled(false);
-							}
-						});
-					}
+				const ticketId = embed.footer?.text?.split(" ")[1];
 
-					const ticketId = embed.footer?.text?.split(" ")[1];
+				const guild = (await getGuild(interaction.guildId as string)) as Document<guildData> & guildData;
+				const cachedTicket = guild.tickets.find(ticket => ticket.id == (ticketId as string)) as Ticket;
 
-					const guild = (await getGuild(interaction.guildId as string)) as Document<guildData> & guildData;
-					const cachedTicket = guild.tickets.find(ticket => ticket.id == (ticketId as string)) as Ticket;
+				const channel = (await interaction.guild?.channels.fetch(cachedTicket.channelId)) as TextChannel;
+				const thread = (await channel.threads.fetch(cachedTicket.threadId)) as ThreadChannel;
 
-					const channel = (await interaction.guild.channels.fetch(cachedTicket.channelId)) as TextChannel;
-					const thread = (await channel.threads.fetch(cachedTicket.threadId)) as ThreadChannel;
+				await interaction.update({
+					embeds: [embed],
+				});
 
-					await thread.setArchived(true);
+				await thread.setArchived(true);
 
-					await interaction.update({
-						embeds: [embed],
-						components: rows,
-					});
-
-					await IGuild.updateOne(
-						{ id: interaction.guild.id, "tickets.id": ticketId },
-						{
-							$set: {
-								"tickets.$.closedBy": {
-									id: interaction.user.id,
-									time: new Date().toLocaleString(),
-								},
-								"tickets.$.status": "closed",
+				await IGuild.updateOne(
+					{ id: interaction.guild?.id, "tickets.id": ticketId },
+					{
+						$set: {
+							"tickets.$.closedBy": {
+								id: interaction.user.id,
+								time: new Date().toLocaleString(),
 							},
-						}
-					);
-				}
+							"tickets.$.status": "closed",
+						},
+					}
+				);
 			},
 			permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
 		},

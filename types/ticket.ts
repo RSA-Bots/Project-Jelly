@@ -10,10 +10,6 @@ export type Ticket = {
 		id: Snowflake;
 		time: string;
 	};
-	openedBy: {
-		id: Snowflake;
-		time: string;
-	};
 	closedBy: {
 		id: Snowflake;
 		time: string;
