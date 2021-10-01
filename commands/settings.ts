@@ -1,6 +1,6 @@
-import { GuildChannel, Permissions } from "discord.js";
+import { Permissions } from "discord.js";
+import { getGuild } from "../globals";
 import type { Command } from "../types/command";
-import { IGuild } from "../types/guild";
 
 const settings: Command = {
 	name: "settings",
@@ -9,30 +9,19 @@ const settings: Command = {
 		options: [
 			{
 				type: "SUB_COMMAND_GROUP",
-				name: "tickets",
-				description: "Manage settings for ticket uploads and creation.",
+				name: "upload",
+				description: "Change the upload channel for a command.",
 				options: [
 					{
 						type: "SUB_COMMAND",
-						name: "upload",
-						description: "Change the channel tickets are uploaded to.",
+						name: "reports",
+						description: "Change the upload channel of reports.",
 						options: [
 							{
 								type: "CHANNEL",
 								name: "channel",
-								description: "Channel to upload tickets to.",
-							},
-						],
-					},
-					{
-						type: "SUB_COMMAND",
-						name: "create",
-						description: "Change the channel tickets can be created in.",
-						options: [
-							{
-								type: "CHANNEL",
-								name: "channel",
-								description: "Channel tickets can be created in.",
+								description: "The channel to upload reports to.",
+								required: true,
 							},
 						],
 					},
@@ -42,67 +31,31 @@ const settings: Command = {
 		defaultPermission: false,
 		enabled: true,
 		callback: async interaction => {
-			switch (interaction.options.getSubcommandGroup(false)) {
-				case "tickets": {
-					switch (interaction.options.getSubcommand(false)) {
-						case "upload": {
-							if (interaction.member && interaction.guild) {
-								const channel = interaction.options.getChannel("channel") as GuildChannel;
-								const channelId = channel ? channel.id : "";
+			if (!interaction.guildId) return;
 
-								await IGuild.updateOne(
-									{ id: interaction.guild.id },
-									{
-										$set: {
-											"settings.tickets.uploadChannel": channelId,
-										},
-									}
-								);
+			const guild = await getGuild(interaction.guildId);
 
-								if (channelId) {
+			if (guild) {
+				switch (interaction.options.getSubcommandGroup(false)) {
+					case "upload": {
+						switch (interaction.options.getSubcommand(false)) {
+							case "reports": {
+								const channel = interaction.options.getChannel("channel");
+								if (channel && channel.type == "GUILD_TEXT") {
+									guild.settings.reports.upload = channel.id;
+
+									await guild.updateSettings(guild.settings);
+
 									await interaction.reply({
 										ephemeral: true,
-										content: `Successfully set the upload channel for tickets to <#${channelId}>`,
-									});
-								} else {
-									await interaction.reply({
-										ephemeral: true,
-										content: "Tickets will now be uploaded to the channel they are created in.",
+										content: `Upload channel for reports has been set to <#${channel.id}>`,
 									});
 								}
+								break;
 							}
-							break;
 						}
-						case "create": {
-							if (interaction.member && interaction.guild) {
-								const channel = interaction.options.getChannel("channel") as GuildChannel;
-								const channelId = channel ? channel.id : "";
-
-								await IGuild.updateOne(
-									{ id: interaction.guild.id },
-									{
-										$set: {
-											"settings.tickets.createChannel": channelId,
-										},
-									}
-								);
-
-								if (channelId) {
-									await interaction.reply({
-										ephemeral: true,
-										content: `Successfully set the creation channel for tickets to <#${channel.id}>`,
-									});
-								} else {
-									await interaction.reply({
-										ephemeral: true,
-										content: "Tickets can now be created in any channel messages can be sent.",
-									});
-								}
-							}
-							break;
-						}
+						break;
 					}
-					break;
 				}
 			}
 		},

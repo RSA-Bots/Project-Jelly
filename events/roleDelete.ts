@@ -1,7 +1,7 @@
 import type { Role } from "discord.js";
 import type { Event } from "../types/event";
 
-const roleDelete: Event<"Role"> = {
+const roleDelete: Event<Role> = {
 	name: "roleDelete",
 	once: false,
 

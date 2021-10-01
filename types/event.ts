@@ -1,25 +1,15 @@
 import type { Client, Guild, Interaction, Message, Role, ThreadChannel } from "discord.js";
 import { getClient } from "../globals";
 
-export type EventTypes = {
-	Message: Message;
-	Interaction: Interaction;
-	Role: Role;
-	Guild: Guild;
-	ThreadChannel: ThreadChannel;
-	Client: Client;
-};
-export type Event<T extends keyof EventTypes> = {
+export type Events = Message | Interaction | Role | Guild | ThreadChannel | Client;
+
+export type Event<T extends Events> = {
 	name: string;
 	once: boolean;
-	callback: (...data: EventTypes[T][]) => void;
+	callback: (...data: T[]) => void;
 };
 
-export function linkEvent<T extends keyof EventTypes>(
-	name: string,
-	once: boolean,
-	callback: (...data: EventTypes[T][]) => void
-): void {
+export function linkEvent<T extends Events>(name: string, once: boolean, callback: (...data: T[]) => void): void {
 	const client = getClient();
 
 	if (once) {

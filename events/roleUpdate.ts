@@ -2,7 +2,7 @@ import type { Role } from "discord.js";
 import { getCommands } from "../globals";
 import type { Event } from "../types/event";
 
-const roleUpdate: Event<"Role"> = {
+const roleUpdate: Event<Role> = {
 	name: "roleUpdate",
 	once: false,
 

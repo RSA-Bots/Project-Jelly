@@ -3,7 +3,7 @@ import { getGuild, linkCommands, linkSlashCommands } from "../globals";
 import { version } from "../package.json";
 import type { Event } from "../types/event";
 
-const ready: Event<"Client"> = {
+const ready: Event<Client> = {
 	name: "ready",
 	once: true,
 	callback: async (client: Client) => {

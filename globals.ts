@@ -7,10 +7,10 @@ import {
 	Snowflake,
 } from "discord.js";
 import { readdirSync } from "fs";
-import { connect, Document } from "mongoose";
+import { connect } from "mongoose";
 import settings from "./settings.json";
 import type { Command } from "./types/command";
-import { Event, EventTypes, linkEvent } from "./types/event";
+import { Event, Events, linkEvent } from "./types/event";
 import { guildData, IGuild } from "./types/guild";
 import { IUser, userData } from "./types/user";
 
@@ -29,7 +29,7 @@ export async function linkDatabase(): Promise<void> {
 	await connect(settings.mongoToken);
 }
 
-export function getUser(userId: Snowflake): Promise<(Document<userData> & userData) | void> {
+export function getUser(userId: Snowflake): Promise<userData | void> {
 	return IUser.findOne({ id: userId })
 		.then(async user => {
 			if (user) {
@@ -46,9 +46,9 @@ export function getUser(userId: Snowflake): Promise<(Document<userData> & userDa
 		.catch(console.log);
 }
 
-export const guildCache: (Document<guildData> & guildData)[] = [];
+export const guildCache: guildData[] = [];
 
-export function getGuild(guildId: Snowflake): Promise<(Document<guildData> & guildData) | void> {
+export function getGuild(guildId: Snowflake): Promise<guildData | void> {
 	return IGuild.findOne({ id: guildId })
 		.then(async guild => {
 			if (guild) {
@@ -71,8 +71,8 @@ export async function linkEvents(): Promise<void> {
 	const eventFiles = readdirSync("./dist/events/");
 
 	for (const event of eventFiles) {
-		await import(`./events/${event}`).then(({ default: event }: { default: Event<keyof EventTypes> }) => {
-			linkEvent<keyof EventTypes>(event.name, event.once, event.callback);
+		await import(`./events/${event}`).then(({ default: event }: { default: Event<Events> }) => {
+			linkEvent<Events>(event.name, event.once, event.callback);
 		});
 	}
 }

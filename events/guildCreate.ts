@@ -1,7 +1,8 @@
+import type { Guild } from "discord.js";
 import { getGuild, linkSlashCommands } from "../globals";
 import type { Event } from "../types/event";
 
-const guildCreate: Event<"Guild"> = {
+const guildCreate: Event<Guild> = {
 	name: "guildCreate",
 	once: false,
 	callback: async guild => {
