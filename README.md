@@ -8,6 +8,7 @@ Utility
 /report <user> <link?>
 /suggest <description> <link?>
 /tag <description> <category?>
+
 /view report <id>
 /view suggestion <id>
 /view tag <name | category> <name?>
