@@ -25,6 +25,19 @@ const settings: Command = {
 							},
 						],
 					},
+					{
+						type: "SUB_COMMAND",
+						name: "suggestions",
+						description: "Change the upload channel of suggestions.",
+						options: [
+							{
+								type: "CHANNEL",
+								name: "channel",
+								description: "The channel to upload suggestions to.",
+								required: true,
+							},
+						],
+					},
 				],
 			},
 		],
@@ -49,6 +62,20 @@ const settings: Command = {
 									await interaction.reply({
 										ephemeral: true,
 										content: `Upload channel for reports has been set to <#${channel.id}>`,
+									});
+								}
+								break;
+							}
+							case "suggestions": {
+								const channel = interaction.options.getChannel("channel");
+								if (channel && channel.type == "GUILD_TEXT") {
+									guild.settings.suggestions.upload = channel.id;
+
+									await guild.updateSettings(guild.settings);
+
+									await interaction.reply({
+										ephemeral: true,
+										content: `Upload channel for suggestions has been set to <#${channel.id}>`,
 									});
 								}
 								break;

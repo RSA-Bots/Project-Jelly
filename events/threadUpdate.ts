@@ -13,10 +13,10 @@ const ready: Event<ThreadChannel> = {
 		const guildInfo = guildCache.find(guild => guild.id == newThread.guildId);
 		if (!guildInfo) return;
 
-		const cachedReport = guildInfo.reports.find(report => report.threadId == newThread.id);
-
 		const channel = newThread.parent;
 		if (!channel || channel.type != "GUILD_TEXT") return;
+
+		const cachedReport = guildInfo.reports.find(report => report.threadId == newThread.id);
 
 		if (cachedReport && oldThread.archived == true && newThread.archived == false) {
 			const message = await channel.messages.fetch(cachedReport.messageId);

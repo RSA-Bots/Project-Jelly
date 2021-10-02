@@ -137,38 +137,39 @@ const report: Command = {
 				const thread = await channel.threads.fetch(cachedReport.threadId);
 				if (!thread) return;
 
+				await interaction.deferUpdate();
+
 				if (thread.archived == false) {
-					const message = await channel.messages.fetch(cachedReport.messageId);
-					const embed = message.embeds[0];
-					const statusField = embed.fields.find(field => field.name == "Status");
-					if (!statusField) return;
+					await thread.setArchived(true); // Does not rely on threadUpdate due to the nature of collecting data from a closed ticket.
+				}
 
-					statusField.value = `Closed by <@${interaction.user.id}>`;
+				const message = await channel.messages.fetch(cachedReport.messageId);
+				const embed = message.embeds[0];
+				const statusField = embed.fields.find(field => field.name == "Status");
+				if (!statusField) return;
 
-					const row = new MessageActionRow();
-					if (report.buttons) {
-						for (const button of report.buttons.map(data => data.button)) {
-							if (button.customId == "openReport") {
-								row.addComponents(button);
-							}
+				statusField.value = `Closed by <@${interaction.user.id}>`;
+
+				const row = new MessageActionRow();
+				if (report.buttons) {
+					for (const button of report.buttons.map(data => data.button)) {
+						if (button.customId == "openReport") {
+							row.addComponents(button);
 						}
 					}
-
-					await message.edit({
-						embeds: [embed],
-						components: [row],
-					});
-
-					await interaction.deferUpdate();
-					await thread.setArchived(true);
-
-					cachedReport.closed = {
-						id: interaction.user.id,
-						time: new Date().toLocaleString(),
-					};
-					cachedReport.status = "closed";
-					await guild.updateReport(cachedReport);
 				}
+
+				await message.edit({
+					embeds: [embed],
+					components: [row],
+				});
+
+				cachedReport.closed = {
+					id: interaction.user.id,
+					time: new Date().toLocaleString(),
+				};
+				cachedReport.status = "closed";
+				await guild.updateReport(cachedReport);
 			},
 			permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
 		},
@@ -193,9 +194,10 @@ const report: Command = {
 				const thread = await channel.threads.fetch(cachedReport.threadId);
 				if (!thread) return;
 
+				await interaction.deferUpdate();
+
 				if (thread.archived == true) {
-					await interaction.deferUpdate();
-					await thread.setArchived(false);
+					await thread.setArchived(false); // Relies on threadUpdate
 				}
 			},
 			permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
