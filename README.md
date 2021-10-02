@@ -5,7 +5,7 @@ Why jelly? While being neither a solid, nor liquid, jelly is able to fit to its 
 ```
 Utility
 
-/report <user> <link?>
+/report <user> <reason>
 /suggest <description> <link?>
 /tag <description> <category?>
 
