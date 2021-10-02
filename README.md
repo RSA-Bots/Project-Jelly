@@ -19,6 +19,5 @@ Settings
 
 /settings report upload <channel>
 /settings suggest upload <channel>
-/settings upload <channel> <suggestions | reports>
 /settings restrict <command> <channel>
 ```
