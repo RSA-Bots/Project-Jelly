@@ -14,19 +14,6 @@ const settings: Command = {
 				options: [
 					{
 						type: "SUB_COMMAND",
-						name: "reports",
-						description: "Change the upload channel of reports.",
-						options: [
-							{
-								type: "CHANNEL",
-								name: "channel",
-								description: "The channel to upload reports to.",
-								required: true,
-							},
-						],
-					},
-					{
-						type: "SUB_COMMAND",
 						name: "suggestions",
 						description: "Change the upload channel of suggestions.",
 						options: [
@@ -52,20 +39,6 @@ const settings: Command = {
 				switch (interaction.options.getSubcommandGroup(false)) {
 					case "upload": {
 						switch (interaction.options.getSubcommand(false)) {
-							case "reports": {
-								const channel = interaction.options.getChannel("channel");
-								if (channel && channel.type == "GUILD_TEXT") {
-									guild.settings.reports.upload = channel.id;
-
-									await guild.updateSettings(guild.settings);
-
-									await interaction.reply({
-										ephemeral: true,
-										content: `Upload channel for reports has been set to <#${channel.id}>`,
-									});
-								}
-								break;
-							}
 							case "suggestions": {
 								const channel = interaction.options.getChannel("channel");
 								if (channel && channel.type == "GUILD_TEXT") {

@@ -6,9 +6,6 @@ import type { Suggestion } from "./suggestion";
 export interface guildData {
 	id: Snowflake;
 	settings: {
-		reports: {
-			upload: Snowflake;
-		};
 		suggestions: {
 			upload: Snowflake;
 		};
@@ -16,8 +13,6 @@ export interface guildData {
 	};
 	reports: Report[];
 	suggestions: Suggestion[];
-	uploadReport(report: Report): Promise<void>;
-	updateReport(report: Report): Promise<void>;
 	uploadSuggestion(suggestion: Suggestion): Promise<void>;
 	updateSuggestion(suggestion: Suggestion): Promise<void>;
 	updateSettings(settings: guildData["settings"]): Promise<void>;
@@ -26,9 +21,6 @@ export interface guildData {
 const IGuildSchema = new Schema<guildData>({
 	id: { type: String, required: true },
 	settings: {
-		reports: {
-			upload: { type: String, default: "" },
-		},
 		suggestions: {
 			upload: { type: String, default: "" },
 		},
@@ -81,32 +73,6 @@ const IGuildSchema = new Schema<guildData>({
 });
 
 IGuildSchema.method({
-	uploadReport: async function (this: guildData, report: Report): Promise<void> {
-		const guildInfo = guildCache.find(guild => guild.id == this.id);
-		if (!guildInfo) return;
-
-		guildInfo.reports.push(report);
-
-		await IGuild.updateOne(
-			{ id: this.id },
-			{
-				$push: { reports: report },
-			}
-		);
-	},
-	updateReport: async function (this: guildData, report: Report): Promise<void> {
-		const guildInfo = guildCache.find(guild => guild.id == this.id);
-		if (!guildInfo) return;
-
-		guildInfo.reports[guildInfo.reports.findIndex(cachedReport => cachedReport.id == report.id)] = report;
-
-		await IGuild.updateOne(
-			{ id: this.id, "reports.id": report.id },
-			{
-				$set: { "reports.$": report },
-			}
-		);
-	},
 	uploadSuggestion: async function (this: guildData, suggestion: Suggestion): Promise<void> {
 		const guildInfo = guildCache.find(guild => guild.id == this.id);
 		if (!guildInfo) return;
