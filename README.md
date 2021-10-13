@@ -5,7 +5,6 @@ Why jelly? While being neither a solid, nor liquid, jelly is able to fit to its 
 ```
 Utility
 
-/report <user> <reason>
 /suggest <description> <link?>
 /tag <description> <category?>
 
@@ -17,7 +16,6 @@ Utility
 ```
 Settings
 
-/settings report upload <channel>
 /settings suggest upload <channel>
 /settings restrict <command> <channel>
 ```
