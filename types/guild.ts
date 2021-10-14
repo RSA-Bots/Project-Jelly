@@ -1,7 +1,6 @@
 import type { Snowflake } from "discord-api-types";
 import { model, Schema } from "mongoose";
 import { guildCache } from "../globals";
-import type { Report } from "./report";
 import type { Suggestion } from "./suggestion";
 export interface guildData {
 	id: Snowflake;
@@ -9,9 +8,11 @@ export interface guildData {
 		suggestions: {
 			upload: Snowflake;
 		};
+		polls: {
+			upload: Snowflake;
+		};
 		commands: { name: string; channel: Snowflake }[];
 	};
-	reports: Report[];
 	suggestions: Suggestion[];
 	uploadSuggestion(suggestion: Suggestion): Promise<void>;
 	updateSuggestion(suggestion: Suggestion): Promise<void>;
@@ -24,6 +25,9 @@ const IGuildSchema = new Schema<guildData>({
 		suggestions: {
 			upload: { type: String, default: "" },
 		},
+		polls: {
+			upload: { type: String, default: ""},
+		},
 		commands: {
 			type: [
 				{
@@ -33,26 +37,6 @@ const IGuildSchema = new Schema<guildData>({
 			],
 			default: [],
 		},
-	},
-	reports: {
-		type: [
-			{
-				id: { type: String, required: true },
-				messageId: { type: String, default: "" },
-				channelId: { type: String, default: "" },
-				threadId: { type: String, default: "" },
-				status: { type: String, default: "open" },
-				author: {
-					id: { type: String, default: "" },
-					time: { type: String, default: "" },
-				},
-				closed: {
-					id: { type: String, default: "" },
-					time: { type: String, default: "" },
-				},
-			},
-		],
-		default: [],
 	},
 	suggestions: {
 		type: [

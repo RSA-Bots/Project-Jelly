@@ -1,4 +1,4 @@
-import { ButtonInteraction, MessageActionRow, MessageButton, MessageEmbed, Permissions } from "discord.js";
+import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, MessageEmbed, Permissions } from "discord.js"
 import { getGuild, guildCache } from "../globals";
 import type { Command } from "../types/command";
 import type { Suggestion } from "../types/suggestion";
@@ -26,8 +26,7 @@ const suggest: Command = {
 			if (
 				!interaction.guildId ||
 				!interaction.guild ||
-				!interaction.member ||
-				!("displayColor" in interaction.member) ||
+				!(interaction.member instanceof GuildMember) ||
 				!suggest.buttons
 			)
 				return;
@@ -39,12 +38,13 @@ const suggest: Command = {
 			if (!guildInfo) return;
 
 			const bot = interaction.guild.me;
-			const uploadChannel =
-				(await interaction.guild.channels.fetch(guild.settings.suggestions.upload)) ?? interaction.channel;
+			const uploadChannel = await interaction.guild.channels.fetch(guild.settings.suggestions.upload);
 
-			if (
-				!uploadChannel ||
-				uploadChannel.type != "GUILD_TEXT" ||
+			if (!uploadChannel) {
+				interaction.reply({ephemeral: true, content: "You must set a channel for suggestions to be uploaded to using the `/settings` command."})
+				return
+			}
+			if (uploadChannel.type != "GUILD_TEXT" ||
 				!bot ||
 				!bot.permissionsIn(uploadChannel).has("VIEW_CHANNEL") ||
 				!bot.permissionsIn(uploadChannel).has("SEND_MESSAGES")

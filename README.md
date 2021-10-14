@@ -6,6 +6,7 @@ Why jelly? While being neither a solid, nor liquid, jelly is able to fit to its 
 Utility
 
 /suggest <description> <link?>
+/poll <1> <2> <3?> <4?> <5?> <6?> <7?> <8?> <9?> <thread?>
 /tag <description> <category?>
 
 /view report <id>
@@ -17,5 +18,6 @@ Utility
 Settings
 
 /settings suggest upload <channel>
+/settings polls upload <channel>
 /settings restrict <command> <channel>
 ```

@@ -25,6 +25,19 @@ const settings: Command = {
 							},
 						],
 					},
+					{
+						type: "SUB_COMMAND",
+						name: "polls",
+						description: "Change the upload channel of polls.",
+						options: [
+							{
+								type: "CHANNEL",
+								name: "channel",
+								description: "The channel to upload polls to.",
+								required: true,
+							},
+						],
+					},
 				],
 			},
 		],
@@ -49,6 +62,20 @@ const settings: Command = {
 									await interaction.reply({
 										ephemeral: true,
 										content: `Upload channel for suggestions has been set to <#${channel.id}>`,
+									});
+								}
+								break;
+							}
+							case "polls": {
+								const channel = interaction.options.getChannel("channel");
+								if (channel && channel.type == "GUILD_TEXT") {
+									guild.settings.polls.upload = channel.id;
+
+									await guild.updateSettings(guild.settings);
+
+									await interaction.reply({
+										ephemeral: true,
+										content: `Upload channel for polls has been set to <#${channel.id}>`,
 									});
 								}
 								break;
