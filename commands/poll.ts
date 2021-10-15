@@ -95,7 +95,8 @@ const poll: Command = {
 			if (uploadChannel.type != "GUILD_TEXT" ||
 				!bot ||
 				!bot.permissionsIn(uploadChannel).has("VIEW_CHANNEL") ||
-				!bot.permissionsIn(uploadChannel).has("SEND_MESSAGES")
+				!bot.permissionsIn(uploadChannel).has("SEND_MESSAGES") ||
+				!bot.permissionsIn(uploadChannel).has("MANAGE_THREADS")
 			)
 				return;
 
