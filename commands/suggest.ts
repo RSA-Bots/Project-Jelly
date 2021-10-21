@@ -71,6 +71,7 @@ const suggest: Command = {
 
 			const row = new MessageActionRow();
 			suggest.buttons.forEach(data => {
+				data.button.setDisabled(false)
 				row.addComponents(data.button);
 			});
 
@@ -118,8 +119,7 @@ const suggest: Command = {
 			button: new MessageButton()
 				.setCustomId("approveSuggestion")
 				.setLabel("Approve")
-				.setStyle("SUCCESS")
-				.setDisabled(false),
+				.setStyle("SUCCESS"),
 			callback: async (interaction: ButtonInteraction): Promise<void> => {
 				if (!interaction.guildId || !interaction.guild) return;
 
@@ -172,8 +172,7 @@ const suggest: Command = {
 			button: new MessageButton()
 				.setCustomId("denySuggestion")
 				.setLabel("Deny")
-				.setStyle("DANGER")
-				.setDisabled(false),
+				.setStyle("DANGER"),
 			callback: async (interaction: ButtonInteraction): Promise<void> => {
 				if (!interaction.guildId || !interaction.guild) return;
 
