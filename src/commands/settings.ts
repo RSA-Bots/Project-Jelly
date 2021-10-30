@@ -41,7 +41,7 @@ const settings: Command = {
 				],
 			},
 		],
-		defaultPermission: false,
+		defaultPermission: true,
 		enabled: true,
 		callback: async interaction => {
 			if (!interaction.guildId) return;
@@ -54,28 +54,28 @@ const settings: Command = {
 						switch (interaction.options.getSubcommand(false)) {
 							case "suggestions": {
 								const channel = interaction.options.getChannel("channel");
-								if (channel && channel.type == "GUILD_TEXT") {
+								if (channel && (channel.type == "GUILD_TEXT" || channel.type == "GUILD_NEWS_THREAD")) {
 									guild.settings.suggestions.upload = channel.id;
 
 									await guild.updateSettings(guild.settings);
 
 									await interaction.reply({
 										ephemeral: true,
-										content: `Upload channel for suggestions has been set to <#${channel.id}>`,
+										content: `Upload channel for suggestions has been set to <#${channel.id}>.`,
 									});
 								}
 								break;
 							}
 							case "polls": {
 								const channel = interaction.options.getChannel("channel");
-								if (channel && channel.type == "GUILD_TEXT") {
+								if (channel && (channel.type == "GUILD_TEXT" || channel.type == "GUILD_NEWS_THREAD")) {
 									guild.settings.polls.upload = channel.id;
 
 									await guild.updateSettings(guild.settings);
 
 									await interaction.reply({
 										ephemeral: true,
-										content: `Upload channel for polls has been set to <#${channel.id}>`,
+										content: `Upload channel for polls has been set to <#${channel.id}>.`,
 									});
 								}
 								break;

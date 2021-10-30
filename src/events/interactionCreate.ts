@@ -20,7 +20,8 @@ const interactionCreate: Event<Interaction> = {
 			!(
 				interaction.channel.type == "GUILD_TEXT" ||
 				interaction.channel.type == "GUILD_PRIVATE_THREAD" ||
-				interaction.channel.type == "GUILD_PUBLIC_THREAD"
+				interaction.channel.type == "GUILD_PUBLIC_THREAD" ||
+				interaction.channel.type == "GUILD_NEWS_THREAD"
 			) ||
 			!bot ||
 			!bot.permissionsIn(interaction.channel).has("VIEW_CHANNEL") ||

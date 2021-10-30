@@ -55,7 +55,7 @@ const suggest: Command = {
 			if (!uploadChannel) {
 				interaction.reply({ephemeral: true, content: "You must set a channel for suggestions to be uploaded to using the `/settings` command."})
 				return
-			} else if (uploadChannel.type != "GUILD_TEXT") {
+			} else if ((uploadChannel.type != "GUILD_TEXT")) {
 				await interaction.reply({
 					ephemeral: true,
 					content: "Upload channel for suggestions is not a valid text channel."
