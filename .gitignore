@@ -100,5 +100,17 @@ dist
 # TernJS port file
 .tern-port
 
+# VSCode
+workflows/
+.editorconfig
+.eslintignore
+.eslintrc.json
+.gitattributes
+.prettierignore
+.prettierrc.json
+tsconfig.json
+.gitignore
+*.package
+
 # Misc
 src/settings.json
