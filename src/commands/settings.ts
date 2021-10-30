@@ -54,7 +54,7 @@ const settings: Command = {
 						switch (interaction.options.getSubcommand(false)) {
 							case "suggestions": {
 								const channel = interaction.options.getChannel("channel");
-								if (channel && (channel.type == "GUILD_TEXT" || channel.type == "GUILD_NEWS_THREAD")) {
+								if (channel && (channel.type == "GUILD_TEXT" || channel.type == "GUILD_NEWS")) {
 									guild.settings.suggestions.upload = channel.id;
 
 									await guild.updateSettings(guild.settings);
@@ -68,7 +68,7 @@ const settings: Command = {
 							}
 							case "polls": {
 								const channel = interaction.options.getChannel("channel");
-								if (channel && (channel.type == "GUILD_TEXT" || channel.type == "GUILD_NEWS_THREAD")) {
+								if (channel && (channel.type == "GUILD_TEXT" || channel.type == "GUILD_NEWS")) {
 									guild.settings.polls.upload = channel.id;
 
 									await guild.updateSettings(guild.settings);
