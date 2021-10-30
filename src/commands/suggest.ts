@@ -32,10 +32,22 @@ const suggest: Command = {
 				return;
 
 			const guild = await getGuild(interaction.guildId);
-			if (!guild) return;
+			if (!guild) {
+				await interaction.reply({
+					ephemeral: true,
+					content: "Could not find guild information."
+				})
+				return;
+			}
 
 			const guildInfo = guildCache.find(guild => guild.id == interaction.guildId);
-			if (!guildInfo) return;
+			if (!guildInfo) {
+				await interaction.reply({
+					ephemeral: true,
+					content: "Could not find cached guild information."
+				})
+				return;
+			}
 
 			const bot = interaction.guild.me;
 			const uploadChannel = await interaction.guild.channels.fetch(guild.settings.suggestions.upload);
@@ -43,14 +55,22 @@ const suggest: Command = {
 			if (!uploadChannel) {
 				interaction.reply({ephemeral: true, content: "You must set a channel for suggestions to be uploaded to using the `/settings` command."})
 				return
-			}
-			if (uploadChannel.type != "GUILD_TEXT" ||
+			} else if (uploadChannel.type != "GUILD_TEXT") {
+				await interaction.reply({
+					ephemeral: true,
+					content: "Upload channel for suggestions is not a valid text channel."
+				})
+				return
+
+			} else if (
 				!bot ||
 				!bot.permissionsIn(uploadChannel).has("VIEW_CHANNEL") ||
 				!bot.permissionsIn(uploadChannel).has("SEND_MESSAGES") ||
 				!bot.permissionsIn(uploadChannel).has("MANAGE_THREADS")
-			)
-				return;
+			) {
+				await interaction.reply({ephemeral: true, content: "The bot does not have sufficient permissions in the upload channel for suggestions."})
+				return
+			}
 
 			const newSuggestion: Suggestion = {
 				id: guildInfo.suggestions.length.toString(),

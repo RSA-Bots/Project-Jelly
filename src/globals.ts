@@ -99,12 +99,13 @@ export async function linkSlashCommands(guild: Guild): Promise<void> {
 	const interactions: ApplicationCommandData[] = [];
 	for (const command of commands) {
 		if (command.interaction && command.interaction.enabled) {
-			interactions.push({
+			const commandData: ApplicationCommandData = {
 				name: command.name,
-				description: command.interaction.description,
 				options: command.interaction.options,
+				description: command.interaction.description,
 				defaultPermission: command.interaction.defaultPermission,
-			});
+			}
+			interactions.push(commandData);
 		}
 	}
 
@@ -118,18 +119,6 @@ export async function linkSlashCommands(guild: Guild): Promise<void> {
 				command.interaction.permissions.forEach(permission => {
 					permissions.push(permission);
 				});
-			}
-
-			for (const role of (await guild.roles.fetch()).map(role => role)) {
-				const hasPermissions = command.permissions ? role.permissions.has(command.permissions) : false;
-
-				if (hasPermissions) {
-					permissions.push({
-						id: role.id,
-						type: "ROLE",
-						permission: true,
-					});
-				}
 			}
 
 			await slashCommand.permissions.set({

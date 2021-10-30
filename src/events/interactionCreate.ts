@@ -32,9 +32,18 @@ const interactionCreate: Event<Interaction> = {
 		if (interaction.isCommand()) {
 			const commands = await getCommands();
 
-			const search = commands.find(command => command.name.toLowerCase() == interaction.commandName);
-			if (search && search.interaction) {
-				search.interaction.callback(interaction);
+			const command = commands.find(command => command.name.toLowerCase() == interaction.commandName);
+			if (command && command.interaction) {
+				if (command.permissions && interaction.member.permissions.has(command.permissions)) {
+					command.interaction.callback(interaction);
+				} else if (!command.permissions) {
+					command.interaction.callback(interaction);
+				} else if (command.permissions && !interaction.member.permissions.has(command.permissions)) {
+					await interaction.reply({
+						ephemeral: true,
+						content: "You have insufficient permissions to use this command.",
+					});
+				}
 			}
 		} else if (interaction.isButton()) {
 			const commands = await getCommands();

@@ -101,4 +101,4 @@ dist
 .tern-port
 
 # Misc
-settings.json
+src/settings.json

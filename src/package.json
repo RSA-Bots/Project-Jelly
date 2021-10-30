@@ -6,7 +6,7 @@
 	"scripts": {
 		"lint": "npx eslint . && npx prettier --check .",
 		"build": "tsc",
-		"start": "npm run build && node dist/index.js",
+		"start": "npm run build && node dist/src/index.js",
 		"check": "npm run build && npm run lint"
 	},
 	"author": "",

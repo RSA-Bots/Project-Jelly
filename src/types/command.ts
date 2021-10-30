@@ -1,5 +1,5 @@
 import type {
-	ApplicationCommandOption,
+	ApplicationCommandOptionData,
 	ApplicationCommandPermissionData,
 	ButtonInteraction,
 	CommandInteraction,
@@ -14,7 +14,7 @@ export type Command = {
 	name: string;
 	interaction?: {
 		description: string;
-		options?: ApplicationCommandOption[];
+		options?: ApplicationCommandOptionData[];
 		permissions?: ApplicationCommandPermissionData[];
 		defaultPermission: boolean;
 		enabled: boolean;
