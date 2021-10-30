@@ -109,7 +109,8 @@ workflows/
 .prettierignore
 .prettierrc.json
 tsconfig.json
-*package
+package-lock.json
+package.json
 .gitignore
 
 # Misc
