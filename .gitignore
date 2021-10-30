@@ -110,6 +110,7 @@ workflows/
 .prettierrc.json
 tsconfig.json
 *package
+.gitignore
 
 # Misc
 src/settings.json
