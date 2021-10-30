@@ -1,5 +1,5 @@
 import type { Message } from "discord.js";
-import { getCommands, getUser } from "../globals";
+import { commands, getUser } from "../globals";
 import type { Event } from "../types/event";
 
 const messageCreate: Event<Message> = {
@@ -9,10 +9,9 @@ const messageCreate: Event<Message> = {
 	callback: async (message: Message) => {
 		if (message.author.bot == false) {
 			const user = await getUser(message.author.id);
-			if (!user) return;
+			if (!user || !message.member) return;
 
 			if (message.content.startsWith(user.prefix)) {
-				const commands = await getCommands();
 
 				const content: string = message.content.split(user.prefix)[1];
 				const args: string[] = content.split(" ");
@@ -21,13 +20,13 @@ const messageCreate: Event<Message> = {
 					request = request.toLowerCase();
 				}
 
-				const query = commands.find(command => command.name.toLowerCase() == request);
+				const command = commands.find(command => command.name == request);
 
-				if (query && query.message && message.member) {
-					const hasPermissions = query.permissions ? message.member.permissions.has(query.permissions) : true;
+				if (command && command.events.messageCommand) {
+					const hasPermissions = command.permissions ? message.member.permissions.has(command.permissions) : true;
 
 					if (hasPermissions) {
-						query.message.callback(message, args);
+						command.events.messageCommand.callback(message, args);
 					}
 				}
 			}

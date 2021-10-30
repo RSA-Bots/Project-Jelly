@@ -1,6 +1,5 @@
 import {
 	ApplicationCommandData,
-	ApplicationCommandPermissionData,
 	Client,
 	Guild,
 	Intents,
@@ -73,15 +72,6 @@ export function getGuild(guildId: Snowflake): Promise<guildData | void> {
 		.catch(console.log);
 }
 
-const commands: Command[] = [];
-
-export async function getCommands(): Promise<Command[]> {
-	if (commands.length == 0) {
-		await linkCommands();
-	}
-	return commands;
-}
-
 export async function linkDatabase(): Promise<void> {
 	await connect(settings.mongoToken);
 }
@@ -105,35 +95,26 @@ export async function linkEvents(): Promise<void> {
 	}
 }
 
+export const commands: Command[] = [];
+
 export async function linkSlashCommands(guild: Guild): Promise<void> {
-	const interactions: ApplicationCommandData[] = [];
+	await guild.commands.set([])
+
 	for (const command of commands) {
-		if (command.interaction && command.interaction.enabled) {
+		if (command.events.slashCommand) {
 			const commandData: ApplicationCommandData = {
 				name: command.name,
-				options: command.interaction.options,
-				description: command.interaction.description,
-				defaultPermission: command.interaction.defaultPermission,
-			}
-			interactions.push(commandData);
-		}
-	}
-
-	await guild.commands.set([]);
-	for (const slashCommand of (await guild.commands.set(interactions)).values()) {
-		const command = commands.find(command => command.name == slashCommand.name);
-
-		if (command) {
-			const permissions: ApplicationCommandPermissionData[] = [];
-			if (command.interaction && command.interaction.permissions) {
-				command.interaction.permissions.forEach(permission => {
-					permissions.push(permission);
-				});
+				options: command.events.slashCommand.options,
+				description: command.events.slashCommand.description,
+				defaultPermission: command.events.slashCommand.defaultPermission,
 			}
 
-			await slashCommand.permissions.set({
-				permissions: permissions,
-			});
+			const slashCommand = await guild.commands.create(commandData)
+			if (command.events.slashCommand.permissions != undefined) {
+				await slashCommand.permissions.set({
+					permissions: command.events.slashCommand.permissions
+				})
+			}
 		}
 	}
 }
