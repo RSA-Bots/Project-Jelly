@@ -10,7 +10,6 @@ const interactionCreate: Event<Interaction> = {
 		if (
 			!interaction.guild ||
 			!interaction.member ||
-			!("permissions" in interaction.member) ||
 			typeof interaction.member.permissions == "string"
 		)
 			return;

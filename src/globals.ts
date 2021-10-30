@@ -14,6 +14,8 @@ import { Event, Events, linkEvent } from "./types/event";
 import { guildData, IGuild } from "./types/guild";
 import { IUser, userData } from "./types/user";
 
+import { version } from "../package.json"
+
 let client: Client;
 
 export function getClient(): Client {
@@ -25,20 +27,24 @@ export function getClient(): Client {
 	return client;
 }
 
-export async function linkDatabase(): Promise<void> {
-	await connect(settings.mongoToken);
+export function getVersion(): string {
+	return version
 }
+
+export const userCache: userData[] = [];
 
 export function getUser(userId: Snowflake): Promise<userData | void> {
 	return IUser.findOne({ id: userId })
 		.then(async user => {
 			if (user) {
+				userCache.push(user)
 				return user;
 			} else {
 				const newUser = new IUser({
 					id: userId,
 				});
 
+				userCache.push(newUser)
 				await newUser.save();
 				return newUser;
 			}
@@ -67,17 +73,18 @@ export function getGuild(guildId: Snowflake): Promise<guildData | void> {
 		.catch(console.log);
 }
 
-export async function linkEvents(): Promise<void> {
-	const eventFiles = readdirSync("./dist/events/");
+const commands: Command[] = [];
 
-	for (const event of eventFiles) {
-		await import(`./events/${event}`).then(({ default: event }: { default: Event<Events> }) => {
-			linkEvent<Events>(event.name, event.once, event.callback);
-		});
+export async function getCommands(): Promise<Command[]> {
+	if (commands.length == 0) {
+		await linkCommands();
 	}
+	return commands;
 }
 
-const commands: Command[] = [];
+export async function linkDatabase(): Promise<void> {
+	await connect(settings.mongoToken);
+}
 
 export async function linkCommands(): Promise<void> {
 	const commandFiles = readdirSync("./dist/commands");
@@ -88,11 +95,14 @@ export async function linkCommands(): Promise<void> {
 	}
 }
 
-export async function getCommands(): Promise<Command[]> {
-	if (commands.length == 0) {
-		await linkCommands();
+export async function linkEvents(): Promise<void> {
+	const eventFiles = readdirSync("./dist/events/");
+
+	for (const event of eventFiles) {
+		await import(`./events/${event}`).then(({ default: event }: { default: Event<Events> }) => {
+			linkEvent<Events>(event.name, event.once, event.callback);
+		});
 	}
-	return commands;
 }
 
 export async function linkSlashCommands(guild: Guild): Promise<void> {
@@ -110,7 +120,7 @@ export async function linkSlashCommands(guild: Guild): Promise<void> {
 	}
 
 	await guild.commands.set([]);
-	for (const slashCommand of (await guild.commands.set(interactions)).map(command => command)) {
+	for (const slashCommand of (await guild.commands.set(interactions)).values()) {
 		const command = commands.find(command => command.name == slashCommand.name);
 
 		if (command) {

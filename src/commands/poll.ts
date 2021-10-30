@@ -80,10 +80,22 @@ const poll: Command = {
 				return;
 
 			const guild = await getGuild(interaction.guildId);
-			if (!guild) return;
+			if (!guild) {
+				await interaction.reply({
+					ephemeral: true,
+					content: "Could not find guild information."
+				})
+				return;
+			}
 
 			const guildInfo = guildCache.find(guild => guild.id == interaction.guildId);
-			if (!guildInfo) return;
+			if (!guildInfo) {
+				await interaction.reply({
+					ephemeral: true,
+					content: "Could not find cached guild information."
+				})
+				return;
+			}
 
 			const bot = interaction.guild.me;
 			const uploadChannel = await interaction.guild.channels.fetch(guild.settings.polls.upload);
@@ -97,8 +109,10 @@ const poll: Command = {
 				!bot.permissionsIn(uploadChannel).has("VIEW_CHANNEL") ||
 				!bot.permissionsIn(uploadChannel).has("SEND_MESSAGES") ||
 				!bot.permissionsIn(uploadChannel).has("MANAGE_THREADS")
-			)
-				return;
+			) {
+				await interaction.reply({ephemeral: true, content: "The bot does not have sufficient permissions in the upload channel for polls."})
+				return
+			}
 
 			const avatarURL = interaction.user.avatarURL()
 			if (!avatarURL) return;
@@ -111,7 +125,6 @@ const poll: Command = {
 				.setAuthor(interaction.user.username + "#" + interaction.user.discriminator, avatarURL)
 				.setTimestamp()
 				.setColor(interaction.member.displayColor)
-				.setThumbnail("https://i.imgur.com/uFuYM5I.png");
 
 
 			let description = ""
@@ -120,17 +133,19 @@ const poll: Command = {
 				if (option) {
 					switch(description.length) {
 						case 0: {
-							description = `${numberWords[iterator - 1]} ${option}`
+							description = `${numberWords[iterator - 1]} ${option}\n`
 							break
 						}
 						default: {
-							description += `\n${numberWords[iterator - 1]} ${option}`
+							description += `\n${numberWords[iterator - 1]} ${option}\n`
 							break
 						}
 					}
 				}
 			}
 			embed.setDescription(description)
+
+			await interaction.deferReply({ephemeral: true})
 
 			const message = await uploadChannel.send({embeds: [embed]})
 			for (let iterator = 1; iterator <= 9; iterator++) {
@@ -141,19 +156,20 @@ const poll: Command = {
 			}
 
 			if (interaction.options.getBoolean("thread")) {
-				await uploadChannel.threads.create({
+				const thread = await uploadChannel.threads.create({
 					startMessage: message,
 					name: question,
 					autoArchiveDuration: 1440,
 					type: "GUILD_PUBLIC_THREAD",
 				});
+				await interaction.editReply({
+					content: `Poll has been created, discussion can be found at <#${thread.id}>.`,
+				});
+			} else {
+				await interaction.editReply({
+					content: "Poll has been created.",
+				});
 			}
-
-
-			await interaction.reply({
-				ephemeral: true,
-				content: "Poll has been created successfully.",
-			});
 		},
 	},
 };

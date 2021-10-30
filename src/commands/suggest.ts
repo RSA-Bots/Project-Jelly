@@ -130,7 +130,7 @@ const suggest: Command = {
 
 			await interaction.reply({
 				ephemeral: true,
-				content: `Suggestion has been created, discussion can be found at <#${thread.id}>`,
+				content: `Suggestion has been created, discussion can be found at <#${thread.id}>.`,
 			});
 		},
 	},

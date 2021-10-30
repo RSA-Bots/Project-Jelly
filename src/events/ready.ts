@@ -1,6 +1,5 @@
-import type { Client } from "discord.js";
-import { getGuild, linkCommands, linkSlashCommands } from "../globals";
-import { version } from "../package.json";
+import type { Client, Guild } from "discord.js";
+import { getVersion, getGuild, linkCommands, linkSlashCommands } from "../globals";
 import type { Event } from "../types/event";
 
 const ready: Event<Client> = {
@@ -8,14 +7,14 @@ const ready: Event<Client> = {
 	once: true,
 	callback: async (client: Client) => {
 		await linkCommands();
-		for (const guild of (await client.guilds.fetch()).map(guild => client.guilds.cache.get(guild.id))) {
+		for (const guild of (await client.guilds.fetch()).values()) {
 			if (guild) {
 				await getGuild(guild.id);
-				await linkSlashCommands(guild);
+				await linkSlashCommands(await guild.fetch());
 			}
 		}
 
-		console.log(`Client is ready, running version: ${version}`);
+		console.log(`Client is ready, running version: ${getVersion()}`);
 	},
 };
 
