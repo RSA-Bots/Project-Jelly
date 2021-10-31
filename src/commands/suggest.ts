@@ -22,6 +22,8 @@ const suggest = new Command("suggest")
 		],
 		defaultPermission: true,
 		callback: async interaction => {
+			await interaction.deferReply({ ephemeral: true });
+
 			if (
 				!interaction.guildId ||
 				!interaction.guild ||

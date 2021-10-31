@@ -18,7 +18,6 @@ export type SlashCommand = {
 	options?: ApplicationCommandOptionData[];
 	permissions?: ApplicationCommandPermissionData[];
 	callback: (interaction: CommandInteraction) => void;
-	ephemeralReply?: boolean;
 	type: "slashCommand";
 };
 
@@ -81,9 +80,6 @@ export class Command {
 	registerCommand(command: SlashCommand | MessageCommand) {
 		if (command.type && command.type == "slashCommand") {
 			this.events.slashCommand = command;
-			if (!command.ephemeralReply) {
-				this.events.slashCommand.ephemeralReply = true;
-			}
 		} else if (command.type && command.type == "messageCommand") {
 			this.events.messageCommand = command;
 		} else {
@@ -99,12 +95,3 @@ export class Command {
 		return this;
 	}
 }
-
-const ping = new Command("ping");
-ping.registerCommand({
-	type: "messageCommand",
-	aliases: ["pong"],
-	callback: (a: Message) => {
-		console.log(a);
-	},
-});

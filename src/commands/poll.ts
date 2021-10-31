@@ -73,6 +73,8 @@ const poll = new Command("poll")
 		],
 		defaultPermission: true,
 		callback: async interaction => {
+			await interaction.deferReply({ ephemeral: true });
+
 			if (!interaction.guildId || !interaction.guild || !(interaction.member instanceof GuildMember)) return;
 
 			const guild = await getGuild(interaction.guildId);
@@ -142,8 +144,6 @@ const poll = new Command("poll")
 				}
 			}
 			embed.setDescription(description);
-
-			await interaction.deferReply({ ephemeral: true });
 
 			const message = await uploadChannel.send({ embeds: [embed] });
 			for (let iterator = 1; iterator <= 9; iterator++) {

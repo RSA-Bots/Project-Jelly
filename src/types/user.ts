@@ -11,7 +11,7 @@ export interface userData {
 	};
 	messageCount: number;
 	commandCount: number;
-	updateLastMessage(message: { time: string; content: string }): Promise<void>;
+	updateLastMessage(message: { time: string; content: string; guildId: Snowflake }): Promise<void>;
 	updateMessageCount(number: number): Promise<void>;
 	updateCommandCount(number: number): Promise<void>;
 }
@@ -22,13 +22,17 @@ const IUserSchema = new Schema<userData>({
 	lastMessage: {
 		time: { type: String, default: "" },
 		content: { type: String, default: "" },
+		guildId: { type: String, default: "" },
 	},
 	messageCount: { type: Number, default: 0 },
 	commandCount: { type: Number, default: 0 },
 });
 
 IUserSchema.method({
-	updateLastMessage: async function (this: userData, message: { time: string; content: string }): Promise<void> {
+	updateLastMessage: async function (
+		this: userData,
+		message: { time: string; content: string; guildId: Snowflake }
+	): Promise<void> {
 		const userInfo = userCache.find(user => user.id == this.id);
 		if (!userInfo) return;
 

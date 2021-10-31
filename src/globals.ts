@@ -3,7 +3,6 @@ import { readdirSync } from "fs";
 import { connect } from "mongoose";
 import settings from "./settings.json";
 import type { Command } from "./types/command";
-import { Event, Events, linkEvent } from "./types/event";
 import { guildData, IGuild } from "./types/guild";
 import { IUser, userData } from "./types/user";
 
@@ -73,9 +72,7 @@ export async function linkDatabase(): Promise<void> {
 export async function linkCommands(): Promise<void> {
 	const commandFiles = readdirSync("./dist/commands");
 	for (const command of commandFiles) {
-		await import(`./commands/${command}`).then(({ default: command }) => {
-			commands.push(command);
-		});
+		await import(`./commands/${command}`);
 	}
 }
 
@@ -83,32 +80,32 @@ export async function linkEvents(): Promise<void> {
 	const eventFiles = readdirSync("./dist/events/");
 
 	for (const event of eventFiles) {
-		await import(`./events/${event}`).then(({ default: event }: { default: Event<Events> }) => {
-			linkEvent<Events>(event.name, event.once, event.callback);
-		});
+		await import(`./events/${event}`);
 	}
 }
 
 export const commands: Command[] = [];
 
 export async function linkSlashCommands(guild: Guild): Promise<void> {
-	await guild.commands.set([]);
-
+	const slashCommands: ApplicationCommandData[] = [];
 	for (const command of commands) {
 		if (command.events.slashCommand) {
-			const commandData: ApplicationCommandData = {
+			slashCommands.push({
 				name: command.name,
 				options: command.events.slashCommand.options,
 				description: command.events.slashCommand.description,
 				defaultPermission: command.events.slashCommand.defaultPermission,
-			};
+			});
+		}
+	}
 
-			const slashCommand = await guild.commands.create(commandData);
-			if (command.events.slashCommand.permissions != undefined) {
-				await slashCommand.permissions.set({
-					permissions: command.events.slashCommand.permissions,
-				});
-			}
+	const registeredCommands = await guild.commands.set(slashCommands);
+	for (const command of commands) {
+		const registeredCommand = registeredCommands.find(slashCommand => slashCommand.name == command.name);
+		if (command.events.slashCommand && command.events.slashCommand.permissions && registeredCommand) {
+			registeredCommand.permissions.set({
+				permissions: command.events.slashCommand.permissions,
+			});
 		}
 	}
 }

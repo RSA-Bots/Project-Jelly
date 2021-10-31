@@ -1,21 +1,16 @@
-import type { Client, Guild } from "discord.js";
-import { getVersion, getGuild, linkCommands, linkSlashCommands } from "../globals";
-import type { Event } from "../types/event";
+import type { Client } from "discord.js";
+import { getVersion, getGuild, linkSlashCommands } from "../globals";
+import { Event } from "../types/event";
 
-const ready: Event<Client> = {
-	name: "ready",
-	once: true,
-	callback: async (client: Client) => {
-		await linkCommands();
-		for (const guild of (await client.guilds.fetch()).values()) {
-			if (guild) {
-				await getGuild(guild.id);
-				await linkSlashCommands(await guild.fetch());
-			}
+const ready = new Event<Client>("ready", true, async (client: Client) => {
+	for (const guild of (await client.guilds.fetch()).values()) {
+		if (guild) {
+			await getGuild(guild.id);
+			await linkSlashCommands(await guild.fetch());
 		}
+	}
 
-		console.log(`Client is ready, running version: ${getVersion()}`);
-	},
-};
+	console.log(`Client is ready, running version: ${getVersion()}`);
+});
 
 export default ready;

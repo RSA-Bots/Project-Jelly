@@ -3,18 +3,19 @@ import { getClient } from "../globals";
 
 export type Events = Message | Interaction | Role | Guild | ThreadChannel | Client;
 
-export type Event<T extends Events> = {
+export class Event<T extends Events> {
 	name: string;
 	once: boolean;
 	callback: (...data: T[]) => void;
-};
 
-export function linkEvent<T extends Events>(name: string, once: boolean, callback: (...data: T[]) => void): void {
-	const client = getClient();
+	constructor(name: string, once: boolean, callback: (...data: T[]) => void) {
+		(this.name = name), (this.once = once), (this.callback = callback);
 
-	if (once) {
-		client.once(name, callback);
-	} else {
-		client.on(name, callback);
+		const client = getClient();
+		if (once) {
+			client.once(name, callback);
+		} else {
+			client.on(name, callback);
+		}
 	}
 }

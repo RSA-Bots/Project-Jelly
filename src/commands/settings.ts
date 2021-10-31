@@ -43,6 +43,7 @@ const settings = new Command("settings")
 		],
 		defaultPermission: true,
 		callback: async interaction => {
+			await interaction.deferReply({ ephemeral: true });
 			if (!interaction.guildId) return;
 
 			const guild = await getGuild(interaction.guildId);
