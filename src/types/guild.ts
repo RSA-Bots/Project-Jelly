@@ -26,7 +26,7 @@ const IGuildSchema = new Schema<guildData>({
 			upload: { type: String, default: "" },
 		},
 		polls: {
-			upload: { type: String, default: ""},
+			upload: { type: String, default: "" },
 		},
 		commands: {
 			type: [

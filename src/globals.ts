@@ -1,10 +1,4 @@
-import {
-	ApplicationCommandData,
-	Client,
-	Guild,
-	Intents,
-	Snowflake,
-} from "discord.js";
+import { ApplicationCommandData, Client, Guild, Intents, Snowflake } from "discord.js";
 import { readdirSync } from "fs";
 import { connect } from "mongoose";
 import settings from "./settings.json";
@@ -13,7 +7,7 @@ import { Event, Events, linkEvent } from "./types/event";
 import { guildData, IGuild } from "./types/guild";
 import { IUser, userData } from "./types/user";
 
-import { version } from "../package.json"
+import { version } from "../package.json";
 
 let client: Client;
 
@@ -27,7 +21,7 @@ export function getClient(): Client {
 }
 
 export function getVersion(): string {
-	return version
+	return version;
 }
 
 export const userCache: userData[] = [];
@@ -36,14 +30,14 @@ export function getUser(userId: Snowflake): Promise<userData | void> {
 	return IUser.findOne({ id: userId })
 		.then(async user => {
 			if (user) {
-				userCache.push(user)
+				userCache.push(user);
 				return user;
 			} else {
 				const newUser = new IUser({
 					id: userId,
 				});
 
-				userCache.push(newUser)
+				userCache.push(newUser);
 				await newUser.save();
 				return newUser;
 			}
@@ -98,7 +92,7 @@ export async function linkEvents(): Promise<void> {
 export const commands: Command[] = [];
 
 export async function linkSlashCommands(guild: Guild): Promise<void> {
-	await guild.commands.set([])
+	await guild.commands.set([]);
 
 	for (const command of commands) {
 		if (command.events.slashCommand) {
@@ -107,13 +101,13 @@ export async function linkSlashCommands(guild: Guild): Promise<void> {
 				options: command.events.slashCommand.options,
 				description: command.events.slashCommand.description,
 				defaultPermission: command.events.slashCommand.defaultPermission,
-			}
+			};
 
-			const slashCommand = await guild.commands.create(commandData)
+			const slashCommand = await guild.commands.create(commandData);
 			if (command.events.slashCommand.permissions != undefined) {
 				await slashCommand.permissions.set({
-					permissions: command.events.slashCommand.permissions
-				})
+					permissions: command.events.slashCommand.permissions,
+				});
 			}
 		}
 	}

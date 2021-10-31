@@ -10,7 +10,7 @@ import type {
 	SelectMenuInteraction,
 } from "discord.js";
 
-import { commands } from "../globals"
+import { commands } from "../globals";
 
 export type SlashCommand = {
 	description: string;
@@ -18,31 +18,32 @@ export type SlashCommand = {
 	options?: ApplicationCommandOptionData[];
 	permissions?: ApplicationCommandPermissionData[];
 	callback: (interaction: CommandInteraction) => void;
-	type: "SlashCommand"
-}
+	ephemeralReply?: boolean;
+	type: "slashCommand";
+};
 
 export type MessageCommand = {
 	aliases?: string[];
 	callback: (message: Message, args?: string[]) => void;
-	type: "Message"
-}
+	type: "messageCommand";
+};
 
 export type Button = {
-	object: MessageButton,
+	object: MessageButton;
 	callback: (interaction: ButtonInteraction) => void;
 	permissions?: PermissionResolvable[];
-}
+};
 
 export type Menu = {
 	object: MessageSelectMenu;
 	callback: (interaction: SelectMenuInteraction) => void;
 	permissions?: PermissionResolvable[];
-}
+};
 export class Command {
 	readonly name: string;
 	readonly events: {
-		slashCommand?: SlashCommand,
-		messageCommand?: MessageCommand,
+		slashCommand?: SlashCommand;
+		messageCommand?: MessageCommand;
 	} = {};
 	readonly buttons: Button[] = [];
 	readonly menus: Menu[] = [];
@@ -72,18 +73,21 @@ export class Command {
 
 	setPermissions(permissions: PermissionResolvable[]) {
 		for (const permission of permissions) {
-			this.permissions.push(permission)
+			this.permissions.push(permission);
 		}
 		return this;
 	}
 
 	registerCommand(command: SlashCommand | MessageCommand) {
-		if (command.type && command.type == "SlashCommand") {
+		if (command.type && command.type == "slashCommand") {
 			this.events.slashCommand = command;
-		} else if (command.type && command.type == "Message") {
+			if (!command.ephemeralReply) {
+				this.events.slashCommand.ephemeralReply = true;
+			}
+		} else if (command.type && command.type == "messageCommand") {
 			this.events.messageCommand = command;
 		} else {
-			console.error("Tried to register a command that is not of type SlashCommand or of type MessageCommand");
+			console.error("Tried to register a command that is not of type slashCommand or of type messageCommand");
 		}
 		return this;
 	}
@@ -91,15 +95,16 @@ export class Command {
 	constructor(name: string) {
 		this.name = name;
 
-		commands.push(this)
+		commands.push(this);
 		return this;
 	}
 }
 
-const ping = new Command("ping")
+const ping = new Command("ping");
 ping.registerCommand({
-	type: "Message",
+	type: "messageCommand",
+	aliases: ["pong"],
 	callback: (a: Message) => {
-
-	}
-})
+		console.log(a);
+	},
+});

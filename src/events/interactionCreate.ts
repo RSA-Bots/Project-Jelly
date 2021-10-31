@@ -1,5 +1,5 @@
 import type { Interaction } from "discord.js";
-import { commands } from "../globals";
+import { commands, getUser } from "../globals";
 import type { Event } from "../types/event";
 
 const interactionCreate: Event<Interaction> = {
@@ -7,12 +7,7 @@ const interactionCreate: Event<Interaction> = {
 	once: false,
 
 	callback: async (interaction: Interaction) => {
-		if (
-			!interaction.guild ||
-			!interaction.member ||
-			typeof interaction.member.permissions == "string"
-		)
-			return;
+		if (!interaction.guild || !interaction.member || typeof interaction.member.permissions == "string") return;
 
 		const bot = interaction.guild.me;
 		if (
@@ -30,10 +25,20 @@ const interactionCreate: Event<Interaction> = {
 		)
 			return;
 
-
 		if (interaction.isCommand()) {
+			const user = await getUser(interaction.user.id);
+			if (!user) return;
+
+			await user.updateCommandCount(user.commandCount + 1);
+
 			const command = commands.find(command => command.name == interaction.commandName);
 			if (command && command.events.slashCommand) {
+				if (command.events.slashCommand.ephemeralReply) {
+					interaction.deferReply({ ephemeral: true });
+				} else {
+					interaction.deferReply();
+				}
+
 				if (command.permissions && interaction.member.permissions.has(command.permissions)) {
 					command.events.slashCommand.callback(interaction);
 				} else if (!command.permissions) {
@@ -46,41 +51,29 @@ const interactionCreate: Event<Interaction> = {
 				}
 			}
 		} else if (interaction.isButton()) {
+			await interaction.deferUpdate();
 			for (const command of commands) {
 				if (command.buttons) {
-					const button = command.buttons.find(
-						button => button.object.customId == interaction.customId
-					);
+					const button = command.buttons.find(button => button.object.customId == interaction.customId);
 					if (button) {
 						if (button.permissions && interaction.member.permissions.has(button.permissions)) {
 							button.callback(interaction);
 						} else if (!button.permissions) {
 							button.callback(interaction);
-						} else if (button.permissions && !interaction.member.permissions.has(button.permissions)) {
-							await interaction.reply({
-								ephemeral: true,
-								content: "You have insufficient permissions to use this button.",
-							});
 						}
 					}
 				}
 			}
 		} else if (interaction.isSelectMenu()) {
+			await interaction.deferUpdate();
 			for (const command of commands) {
 				if (command.menus) {
-					const menu = command.menus.find(
-						menu => menu.object.customId == interaction.customId
-					);
+					const menu = command.menus.find(menu => menu.object.customId == interaction.customId);
 					if (menu) {
 						if (menu.permissions && interaction.member.permissions.has(menu.permissions)) {
 							menu.callback(interaction);
 						} else if (!menu.permissions) {
 							menu.callback(interaction);
-						} else if (menu.permissions && !interaction.member.permissions.has(menu.permissions)) {
-							await interaction.reply({
-								ephemeral: true,
-								content: "You have insufficient permissions to use this menu.",
-							});
 						}
 					}
 				}

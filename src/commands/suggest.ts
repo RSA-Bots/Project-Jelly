@@ -1,10 +1,11 @@
-import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, MessageEmbed, Permissions } from "discord.js"
+import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, MessageEmbed, Permissions } from "discord.js";
 import { getGuild, guildCache } from "../globals";
 import { Command } from "../types/command";
 import type { Suggestion } from "../types/suggestion";
 
-const suggest = new Command("suggest").registerCommand({
-		type: "SlashCommand",
+const suggest = new Command("suggest")
+	.registerCommand({
+		type: "slashCommand",
 		description: "Create a suggestion.",
 		options: [
 			{
@@ -31,19 +32,17 @@ const suggest = new Command("suggest").registerCommand({
 
 			const guild = await getGuild(interaction.guildId);
 			if (!guild) {
-				await interaction.reply({
-					ephemeral: true,
-					content: "Could not find guild information."
-				})
+				await interaction.editReply({
+					content: "Could not find guild information.",
+				});
 				return;
 			}
 
 			const guildInfo = guildCache.find(guild => guild.id == interaction.guildId);
 			if (!guildInfo) {
-				await interaction.reply({
-					ephemeral: true,
-					content: "Could not find cached guild information."
-				})
+				await interaction.editReply({
+					content: "Could not find cached guild information.",
+				});
 				return;
 			}
 
@@ -51,23 +50,25 @@ const suggest = new Command("suggest").registerCommand({
 			const uploadChannel = await interaction.guild.channels.fetch(guild.settings.suggestions.upload);
 
 			if (!uploadChannel) {
-				interaction.reply({ephemeral: true, content: "You must set a channel for suggestions to be uploaded to using the `/settings` command."})
-				return
-			} else if ((uploadChannel.type != "GUILD_TEXT")) {
-				await interaction.reply({
-					ephemeral: true,
-					content: "Upload channel for suggestions is not a valid text channel."
-				})
-				return
-
+				interaction.editReply({
+					content: "You must set a channel for suggestions to be uploaded to using the `/settings` command.",
+				});
+				return;
+			} else if (uploadChannel.type != "GUILD_TEXT") {
+				await interaction.editReply({
+					content: "Upload channel for suggestions is not a valid text channel.",
+				});
+				return;
 			} else if (
 				!bot ||
 				!bot.permissionsIn(uploadChannel).has("VIEW_CHANNEL") ||
 				!bot.permissionsIn(uploadChannel).has("SEND_MESSAGES") ||
 				!bot.permissionsIn(uploadChannel).has("MANAGE_THREADS")
 			) {
-				await interaction.reply({ephemeral: true, content: "The bot does not have sufficient permissions in the upload channel for suggestions."})
-				return
+				await interaction.editReply({
+					content: "The bot does not have sufficient permissions in the upload channel for suggestions.",
+				});
+				return;
 			}
 
 			const newSuggestion: Suggestion = {
@@ -90,14 +91,13 @@ const suggest = new Command("suggest").registerCommand({
 			const row = new MessageActionRow();
 			if (suggest.buttons) {
 				suggest.buttons.forEach(button => {
-					button.object.setDisabled(false)
+					button.object.setDisabled(false);
 					row.addComponents(button.object);
 				});
 			} else {
-				console.error("The buttons for this command have not been setup properly.")
-				return
+				console.error("The buttons for this command have not been setup properly.");
+				return;
 			}
-
 
 			const embed = new MessageEmbed()
 				.setAuthor(interaction.user.username + "#" + interaction.user.discriminator, avatarURL)
@@ -132,119 +132,108 @@ const suggest = new Command("suggest").registerCommand({
 
 			await guild.updateSuggestion(newSuggestion);
 
-			await interaction.reply({
-				ephemeral: true,
+			await interaction.editReply({
 				content: `Suggestion has been created, discussion can be found at <#${thread.id}>.`,
 			});
 		},
-	}
-).addButtons([
-	{
-		object: new MessageButton()
-			.setCustomId("approveSuggestion")
-			.setLabel("Approve")
-			.setStyle("SUCCESS"),
-		callback: async (interaction: ButtonInteraction): Promise<void> => {
-			if (!interaction.guildId || !interaction.guild) return;
+	})
+	.addButtons([
+		{
+			object: new MessageButton().setCustomId("approveSuggestion").setLabel("Approve").setStyle("SUCCESS"),
+			callback: async (interaction: ButtonInteraction): Promise<void> => {
+				if (!interaction.guildId || !interaction.guild) return;
 
-			const guild = await getGuild(interaction.guildId);
-			if (!guild) return;
+				const guild = await getGuild(interaction.guildId);
+				if (!guild) return;
 
-			const cachedSuggestion = guild.suggestions.find(
-				suggestion => suggestion.messageId == interaction.message.id
-			);
-			if (!cachedSuggestion) return;
+				const cachedSuggestion = guild.suggestions.find(
+					suggestion => suggestion.messageId == interaction.message.id
+				);
+				if (!cachedSuggestion) return;
 
-			const channel = await interaction.guild.channels.fetch(cachedSuggestion.channelId);
-			if (!channel || channel.type != "GUILD_TEXT") return;
+				const channel = await interaction.guild.channels.fetch(cachedSuggestion.channelId);
+				if (!channel || channel.type != "GUILD_TEXT") return;
 
-			const thread = await channel.threads.fetch(cachedSuggestion.threadId);
-			if (!thread) return;
+				const thread = await channel.threads.fetch(cachedSuggestion.threadId);
+				if (!thread) return;
 
-			await interaction.deferUpdate();
+				const message = await channel.messages.fetch(cachedSuggestion.messageId);
+				const embed = message.embeds[0];
+				const statusField = embed.fields.find(field => field.name == "Status");
+				if (!statusField) return;
 
-			const message = await channel.messages.fetch(cachedSuggestion.messageId);
-			const embed = message.embeds[0];
-			const statusField = embed.fields.find(field => field.name == "Status");
-			if (!statusField) return;
+				statusField.value = `Approved by <@${interaction.user.id}>`;
 
-			statusField.value = `Approved by <@${interaction.user.id}>`;
-
-			const row = new MessageActionRow();
-			if (suggest.buttons) {
-				for (const button of suggest.buttons.values()) {
-					if (button.object.customId == "approveSuggestion") {
-						button.object.setDisabled(true);
-					} else {
-						button.object.setDisabled(false);
+				const row = new MessageActionRow();
+				if (suggest.buttons) {
+					for (const button of suggest.buttons.values()) {
+						if (button.object.customId == "approveSuggestion") {
+							button.object.setDisabled(true);
+						} else {
+							button.object.setDisabled(false);
+						}
+						row.addComponents(button.object);
 					}
-					row.addComponents(button.object);
 				}
-			}
 
-			await message.edit({
-				embeds: [embed],
-				components: [row],
-			});
+				await message.edit({
+					embeds: [embed],
+					components: [row],
+				});
 
-			cachedSuggestion.status = "approved";
-			await guild.updateSuggestion(cachedSuggestion);
+				cachedSuggestion.status = "approved";
+				await guild.updateSuggestion(cachedSuggestion);
+			},
+			permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
 		},
-		permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
-	},
-	{
-		object: new MessageButton()
-			.setCustomId("denySuggestion")
-			.setLabel("Deny")
-			.setStyle("DANGER"),
-		callback: async (interaction: ButtonInteraction): Promise<void> => {
-			if (!interaction.guildId || !interaction.guild) return;
+		{
+			object: new MessageButton().setCustomId("denySuggestion").setLabel("Deny").setStyle("DANGER"),
+			callback: async (interaction: ButtonInteraction): Promise<void> => {
+				if (!interaction.guildId || !interaction.guild) return;
 
-			const guild = await getGuild(interaction.guildId);
-			if (!guild) return;
+				const guild = await getGuild(interaction.guildId);
+				if (!guild) return;
 
-			const cachedSuggestion = guild.suggestions.find(
-				suggestion => suggestion.messageId == interaction.message.id
-			);
-			if (!cachedSuggestion) return;
+				const cachedSuggestion = guild.suggestions.find(
+					suggestion => suggestion.messageId == interaction.message.id
+				);
+				if (!cachedSuggestion) return;
 
-			const channel = await interaction.guild.channels.fetch(cachedSuggestion.channelId);
-			if (!channel || channel.type != "GUILD_TEXT") return;
+				const channel = await interaction.guild.channels.fetch(cachedSuggestion.channelId);
+				if (!channel || channel.type != "GUILD_TEXT") return;
 
-			const thread = await channel.threads.fetch(cachedSuggestion.threadId);
-			if (!thread) return;
+				const thread = await channel.threads.fetch(cachedSuggestion.threadId);
+				if (!thread) return;
 
-			await interaction.deferUpdate();
+				const message = await channel.messages.fetch(cachedSuggestion.messageId);
+				const embed = message.embeds[0];
+				const statusField = embed.fields.find(field => field.name == "Status");
+				if (!statusField) return;
 
-			const message = await channel.messages.fetch(cachedSuggestion.messageId);
-			const embed = message.embeds[0];
-			const statusField = embed.fields.find(field => field.name == "Status");
-			if (!statusField) return;
+				statusField.value = `Denied by <@${interaction.user.id}>`;
 
-			statusField.value = `Denied by <@${interaction.user.id}>`;
-
-			const row = new MessageActionRow();
-			if (suggest.buttons) {
-				for (const button of suggest.buttons.values()) {
-					if (button.object.customId == "denySuggestion") {
-						button.object.setDisabled(true);
-					} else {
-						button.object.setDisabled(false);
+				const row = new MessageActionRow();
+				if (suggest.buttons) {
+					for (const button of suggest.buttons.values()) {
+						if (button.object.customId == "denySuggestion") {
+							button.object.setDisabled(true);
+						} else {
+							button.object.setDisabled(false);
+						}
+						row.addComponents(button.object);
 					}
-					row.addComponents(button.object);
 				}
-			}
 
-			await message.edit({
-				embeds: [embed],
-				components: [row],
-			});
+				await message.edit({
+					embeds: [embed],
+					components: [row],
+				});
 
-			cachedSuggestion.status = "denied";
-			await guild.updateSuggestion(cachedSuggestion);
+				cachedSuggestion.status = "denied";
+				await guild.updateSuggestion(cachedSuggestion);
+			},
+			permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
 		},
-		permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
-	},
-])
+	]);
 
 export default suggest;
