@@ -1,5 +1,5 @@
 import type { Client, Guild, Interaction, Message, Role, ThreadChannel } from "discord.js";
-import { readdirSync } from "fs";
+import { read, readdirSync } from "fs";
 import { client } from "../index";
 
 export type Events = Message | Interaction | Role | Guild | ThreadChannel | Client;
@@ -19,9 +19,8 @@ export class Event<T extends Events> {
 }
 
 export async function linkEvents(): Promise<void> {
-	const eventFiles = readdirSync("./dist/events/");
-
+	const eventFiles = readdirSync("./src/events");
 	for (const event of eventFiles) {
-		await import(`../events/${event}`);
+		await import(`../events/${event.split(".").shift()}`);
 	}
 }

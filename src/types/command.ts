@@ -100,9 +100,9 @@ export class Command {
 }
 
 export async function linkCommands(): Promise<void> {
-	const commandFiles = readdirSync("./dist/commands");
+	const commandFiles = readdirSync("./src/commands/");
 	for (const command of commandFiles) {
-		await import(`../commands/${command}`);
+		await import(`../commands/${command.split(".").shift()}`);
 	}
 }
 

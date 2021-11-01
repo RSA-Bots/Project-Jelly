@@ -2,7 +2,6 @@ import type { Client } from "discord.js";
 import { linkSlashCommands } from "../types/command";
 import { Event } from "../types/event";
 import { getGuild } from "../types/guild";
-import { version } from "../../package.json";
 
 new Event<Client>("ready", true, async (client: Client) => {
 	for (const guild of (await client.guilds.fetch()).values()) {
@@ -12,5 +11,5 @@ new Event<Client>("ready", true, async (client: Client) => {
 		}
 	}
 
-	console.log(`Client is ready, running version: ${version}`);
+	console.log(`Client is ready, running version: ${process.env.npm_package_version}`);
 });
