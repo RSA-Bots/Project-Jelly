@@ -1,8 +1,9 @@
 import type { Message } from "discord.js";
-import { commands, getUser } from "../globals";
+import { commands } from "../types/command";
 import { Event } from "../types/event";
+import { getUser } from "../types/user";
 
-const messageCreate = new Event<Message>("messageCreate", false, async (message: Message) => {
+new Event<Message>("messageCreate", false, async (message: Message) => {
 	if (message.author.bot == false) {
 		const user = await getUser(message.author.id);
 		if (!user || !message.member || !message.guildId) return;
@@ -50,5 +51,3 @@ const messageCreate = new Event<Message>("messageCreate", false, async (message:
 		}
 	}
 });
-
-export default messageCreate;

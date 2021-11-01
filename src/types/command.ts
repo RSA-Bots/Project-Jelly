@@ -1,16 +1,19 @@
 import type {
+	ApplicationCommandData,
 	ApplicationCommandOptionData,
 	ApplicationCommandPermissionData,
 	ButtonInteraction,
 	CommandInteraction,
+	Guild,
 	Message,
 	MessageButton,
 	MessageSelectMenu,
 	PermissionResolvable,
 	SelectMenuInteraction,
 } from "discord.js";
+import { readdirSync } from "fs";
 
-import { commands } from "../globals";
+export const commands: Command[] = [];
 
 export type SlashCommand = {
 	description: string;
@@ -93,5 +96,36 @@ export class Command {
 
 		commands.push(this);
 		return this;
+	}
+}
+
+export async function linkCommands(): Promise<void> {
+	const commandFiles = readdirSync("./dist/commands");
+	for (const command of commandFiles) {
+		await import(`./commands/${command}`);
+	}
+}
+
+export async function linkSlashCommands(guild: Guild): Promise<void> {
+	const slashCommands: ApplicationCommandData[] = [];
+	for (const command of commands) {
+		if (command.events.slashCommand) {
+			slashCommands.push({
+				name: command.name,
+				options: command.events.slashCommand.options,
+				description: command.events.slashCommand.description,
+				defaultPermission: command.events.slashCommand.defaultPermission,
+			});
+		}
+	}
+
+	const registeredCommands = await guild.commands.set(slashCommands);
+	for (const command of commands) {
+		const registeredCommand = registeredCommands.find(slashCommand => slashCommand.name == command.name);
+		if (command.events.slashCommand && command.events.slashCommand.permissions && registeredCommand) {
+			registeredCommand.permissions.set({
+				permissions: command.events.slashCommand.permissions,
+			});
+		}
 	}
 }

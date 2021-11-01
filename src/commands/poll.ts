@@ -1,12 +1,12 @@
 import { GuildMember, MessageEmbed, Permissions } from "discord.js";
-import { getGuild, guildCache } from "../globals";
 import { Command } from "../types/command";
+import { getGuild, guildCache } from "../types/guild";
 
 //todo: Implement a way to show the leading result of a poll, maybe on the embed itself, as well as in the thread.
 
 const numberToEmoji = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"];
 
-const poll = new Command("poll")
+new Command("poll")
 	.registerCommand({
 		type: "slashCommand",
 		description: "Create a suggestion.",
@@ -78,17 +78,10 @@ const poll = new Command("poll")
 			if (!interaction.guildId || !interaction.guild || !(interaction.member instanceof GuildMember)) return;
 
 			const guild = await getGuild(interaction.guildId);
-			if (!guild) {
+			const guildInfo = guildCache.find(guild => guild.id == interaction.guildId);
+			if (!guild || !guildInfo) {
 				await interaction.editReply({
 					content: "Could not find guild information.",
-				});
-				return;
-			}
-
-			const guildInfo = guildCache.find(guild => guild.id == interaction.guildId);
-			if (!guildInfo) {
-				await interaction.editReply({
-					content: "Could not find cached guild information.",
 				});
 				return;
 			}
@@ -171,5 +164,3 @@ const poll = new Command("poll")
 		},
 	})
 	.setPermissions([Permissions.FLAGS.MANAGE_GUILD]);
-
-export default poll;

@@ -1,6 +1,6 @@
 import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, MessageEmbed, Permissions } from "discord.js";
-import { getGuild, guildCache } from "../globals";
 import { Command } from "../types/command";
+import { getGuild, guildCache } from "../types/guild";
 import type { Suggestion } from "../types/suggestion";
 
 const suggest = new Command("suggest")
@@ -33,17 +33,11 @@ const suggest = new Command("suggest")
 				return;
 
 			const guild = await getGuild(interaction.guildId);
-			if (!guild) {
+			const guildInfo = guildCache.find(guild => guild.id == interaction.guildId);
+
+			if (!guild || !guildInfo) {
 				await interaction.editReply({
 					content: "Could not find guild information.",
-				});
-				return;
-			}
-
-			const guildInfo = guildCache.find(guild => guild.id == interaction.guildId);
-			if (!guildInfo) {
-				await interaction.editReply({
-					content: "Could not find cached guild information.",
 				});
 				return;
 			}
@@ -107,8 +101,7 @@ const suggest = new Command("suggest")
 				.addField("Status", "Open", true)
 				.setFooter(`id: ${newSuggestion.id}`)
 				.setTimestamp()
-				.setColor(interaction.member.displayColor)
-				.setThumbnail("https://i.imgur.com/OMEaEYY.png");
+				.setColor(interaction.member.displayColor);
 
 			const link = interaction.options.getString("link");
 			if (link && (link.startsWith("https://") || link.startsWith("http://") || link.startsWith("www."))) {

@@ -1,7 +1,8 @@
 import type { Snowflake } from "discord-api-types";
 import { model, Schema } from "mongoose";
-import { guildCache } from "../globals";
 import type { Suggestion } from "./suggestion";
+
+export const guildCache: guildData[] = [];
 export interface guildData {
 	id: Snowflake;
 	settings: {
@@ -101,3 +102,22 @@ IGuildSchema.method({
 });
 
 export const IGuild = model<guildData>("Guild", IGuildSchema);
+
+export function getGuild(guildId: Snowflake): Promise<guildData | void> {
+	return IGuild.findOne({ id: guildId })
+		.then(async guild => {
+			if (guild) {
+				guildCache.push(guild);
+				return guild;
+			} else {
+				const newGuild = new IGuild({
+					id: guildId,
+				});
+
+				guildCache.push(newGuild);
+				await newGuild.save();
+				return newGuild;
+			}
+		})
+		.catch(console.log);
+}

@@ -1,8 +1,9 @@
 import type { Interaction } from "discord.js";
-import { commands, getUser } from "../globals";
+import { commands } from "../types/command";
 import { Event } from "../types/event";
+import { getUser } from "../types/user";
 
-const interactionCreate = new Event<Interaction>("interactionCreate", false, async (interaction: Interaction) => {
+new Event<Interaction>("interactionCreate", false, async (interaction: Interaction) => {
 	if (!interaction.guild || !interaction.member || typeof interaction.member.permissions == "string") return;
 
 	const bot = interaction.guild.me;
@@ -70,5 +71,3 @@ const interactionCreate = new Event<Interaction>("interactionCreate", false, asy
 		}
 	}
 });
-
-export default interactionCreate;

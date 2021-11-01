@@ -1,7 +1,7 @@
 import type { Snowflake } from "discord-api-types";
 import { model, Schema } from "mongoose";
-import { userCache } from "../globals";
 
+export const userCache: userData[] = [];
 export interface userData {
 	id: Snowflake;
 	prefix: string;
@@ -74,3 +74,22 @@ IUserSchema.method({
 });
 
 export const IUser = model<userData>("User", IUserSchema);
+
+export function getUser(userId: Snowflake): Promise<userData | void> {
+	return IUser.findOne({ id: userId })
+		.then(async user => {
+			if (user) {
+				userCache.push(user);
+				return user;
+			} else {
+				const newUser = new IUser({
+					id: userId,
+				});
+
+				userCache.push(newUser);
+				await newUser.save();
+				return newUser;
+			}
+		})
+		.catch(console.log);
+}

@@ -1,8 +1,8 @@
 import { Permissions } from "discord.js";
-import { getGuild } from "../globals";
 import { Command } from "../types/command";
+import { getGuild } from "../types/guild";
 
-const settings = new Command("settings")
+new Command("settings")
 	.registerCommand({
 		type: "slashCommand",
 		description: "Change settings for a guild.",
@@ -86,5 +86,3 @@ const settings = new Command("settings")
 		},
 	})
 	.setPermissions([Permissions.FLAGS.MANAGE_GUILD]);
-
-export default settings;
