@@ -102,7 +102,7 @@ export class Command {
 export async function linkCommands(): Promise<void> {
 	const commandFiles = readdirSync("./dist/commands");
 	for (const command of commandFiles) {
-		await import(`./commands/${command}`);
+		await import(`../commands/${command}`);
 	}
 }
 

@@ -22,6 +22,6 @@ export async function linkEvents(): Promise<void> {
 	const eventFiles = readdirSync("./dist/events/");
 
 	for (const event of eventFiles) {
-		await import(`./events/${event}`);
+		await import(`../events/${event}`);
 	}
 }
