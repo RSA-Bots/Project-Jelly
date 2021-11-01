@@ -14,5 +14,4 @@ Settings
 
 /settings suggest upload <channel>
 /settings polls upload <channel>
-/settings restrict <command> <channel>
 ```
