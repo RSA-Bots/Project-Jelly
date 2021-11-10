@@ -30,7 +30,6 @@ new Event<Interaction>("interactionCreate", false, async (interaction: Interacti
 			}
 		}
 	} else if (interaction.isButton()) {
-		await interaction.deferUpdate();
 		for (const command of commands) {
 			if (command.buttons) {
 				const button = command.buttons.find(button => button.object.customId == interaction.customId);
@@ -49,7 +48,6 @@ new Event<Interaction>("interactionCreate", false, async (interaction: Interacti
 			}
 		}
 	} else if (interaction.isSelectMenu()) {
-		await interaction.deferUpdate();
 		for (const command of commands) {
 			if (command.menus) {
 				const menu = command.menus.find(menu => menu.object.customId == interaction.customId);

@@ -142,6 +142,7 @@ const suggest = new Command("suggest")
 		{
 			object: new MessageButton().setCustomId("approveSuggestion").setLabel("Approve").setStyle("PRIMARY"),
 			callback: async interaction => {
+				await interaction.deferUpdate();
 				if (!interaction.guild) return;
 
 				const guild = await getGuild(interaction.guildId);
@@ -190,6 +191,7 @@ const suggest = new Command("suggest")
 		{
 			object: new MessageButton().setCustomId("denySuggestion").setLabel("Deny").setStyle("DANGER"),
 			callback: async interaction => {
+				await interaction.deferUpdate();
 				if (!interaction.guild) return;
 
 				const guild = await getGuild(interaction.guildId);
@@ -237,6 +239,7 @@ const suggest = new Command("suggest")
 		{
 			object: new MessageButton().setCustomId("completeSuggestion").setLabel("Complete").setStyle("SUCCESS"),
 			callback: async interaction => {
+				await interaction.deferUpdate();
 				if (!interaction.guild) return;
 
 				const guild = await getGuild(interaction.guildId);
