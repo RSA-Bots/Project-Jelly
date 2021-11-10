@@ -10,4 +10,6 @@ export type Suggestion = {
 		id: Snowflake;
 		time: string;
 	};
+	content: string;
+	comment: string;
 };

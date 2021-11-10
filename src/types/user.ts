@@ -1,95 +1,80 @@
 import type { Snowflake } from "discord-api-types";
-import { model, Schema } from "mongoose";
-
-export const userCache: userData[] = [];
+import { Document, model, Schema } from "mongoose";
 export interface userData {
 	id: Snowflake;
 	prefix: string;
-	lastMessage: {
-		time: string;
-		content: string;
+	stats: {
+		approvedSuggestions: number;
+		deniedSuggestions: number;
+		createdSuggestions: number;
+		createdPolls: number;
 	};
-	messageCount: number;
-	commandCount: number;
-	updateLastMessage(message: { time: string; content: string; guildId: Snowflake }): Promise<void>;
-	updateMessageCount(number: number): Promise<void>;
-	updateCommandCount(number: number): Promise<void>;
 }
+
+export interface userCacheData {
+	document: Document<userData>;
+	cache: userData;
+}
+
+export const userCache: userCacheData[] = [];
 
 const IUserSchema = new Schema<userData>({
 	id: { type: String, required: true },
-	prefix: { type: String, default: "!" },
-	lastMessage: {
-		time: { type: String, default: "" },
-		content: { type: String, default: "" },
-		guildId: { type: String, default: "" },
-	},
-	messageCount: { type: Number, default: 0 },
-	commandCount: { type: Number, default: 0 },
-});
-
-IUserSchema.method({
-	updateLastMessage: async function (
-		this: userData,
-		message: { time: string; content: string; guildId: Snowflake }
-	): Promise<void> {
-		const userInfo = userCache.find(user => user.id == this.id);
-		if (!userInfo) return;
-
-		userInfo.lastMessage = message;
-
-		await IUser.updateOne(
-			{ id: this.id },
-			{
-				$set: { lastMessage: message },
-			}
-		);
-	},
-	updateMessageCount: async function (this: userData, number: number): Promise<void> {
-		const userInfo = userCache.find(user => user.id == this.id);
-		if (!userInfo) return;
-
-		userInfo.messageCount = number;
-
-		await IUser.updateOne(
-			{ id: this.id },
-			{
-				$set: { messageCount: number },
-			}
-		);
-	},
-	updateCommandCount: async function (this: userData, number: number): Promise<void> {
-		const userInfo = userCache.find(user => user.id == this.id);
-		if (!userInfo) return;
-
-		userInfo.commandCount = number;
-
-		await IUser.updateOne(
-			{ id: this.id },
-			{
-				$set: { commandCount: number },
-			}
-		);
+	prefix: { type: String, default: ";" },
+	stats: {
+		approvedSuggestions: { type: Number, default: 0 },
+		createdSuggestions: { type: Number, default: 0 },
+		createdPolls: { type: Number, default: 0 },
 	},
 });
 
 export const IUser = model<userData>("User", IUserSchema);
 
-export function getUser(userId: Snowflake): Promise<userData | void> {
-	return IUser.findOne({ id: userId })
+export async function uploadUser(userId: Snowflake): Promise<{ document: Document<userData>; cache: userData }> {
+	const document = await IUser.where({ id: userId })
+		.findOne()
 		.then(async user => {
 			if (user) {
-				userCache.push(user);
 				return user;
 			} else {
-				const newUser = new IUser({
+				const upload = new IUser({
 					id: userId,
 				});
 
-				userCache.push(newUser);
-				await newUser.save();
-				return newUser;
+				await upload.save();
+				return upload;
 			}
-		})
-		.catch(console.log);
+		});
+
+	const index = userCache.push({
+		document: document,
+		cache: {
+			id: document.id,
+			prefix: document.prefix,
+			stats: document.stats,
+		},
+	});
+
+	return userCache[index - 1];
+}
+
+export async function getUser(userId: Snowflake): Promise<{ document: Document<userData>; cache: userData }> {
+	const search = userCache.find(user => user.cache.id == userId);
+
+	if (search) {
+		return search;
+	} else {
+		return await uploadUser(userId);
+	}
+}
+export async function updateStats(userId: Snowflake, stats: userData["stats"]): Promise<void> {
+	await IUser.updateOne(
+		{ id: userId },
+		{
+			$set: { stats: stats },
+		}
+	);
+
+	const user = await getUser(userId);
+	user.cache.stats = stats;
 }

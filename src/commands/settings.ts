@@ -1,6 +1,6 @@
 import { Permissions } from "discord.js";
 import { Command } from "../types/command";
-import { getGuild } from "../types/guild";
+import { getGuild, updateSettings } from "../types/guild";
 
 new Command("settings")
 	.registerCommand({
@@ -21,19 +21,7 @@ new Command("settings")
 								type: "CHANNEL",
 								name: "channel",
 								description: "The channel to upload suggestions to.",
-								required: true,
-							},
-						],
-					},
-					{
-						type: "SUB_COMMAND",
-						name: "polls",
-						description: "Change the upload channel of polls.",
-						options: [
-							{
-								type: "CHANNEL",
-								name: "channel",
-								description: "The channel to upload polls to.",
+								channelTypes: ["GUILD_TEXT"],
 								required: true,
 							},
 						],
@@ -44,43 +32,26 @@ new Command("settings")
 		defaultPermission: true,
 		callback: async interaction => {
 			await interaction.deferReply({ ephemeral: true });
-			if (!interaction.guildId) return;
 
 			const guild = await getGuild(interaction.guildId);
 
-			if (guild) {
-				switch (interaction.options.getSubcommandGroup(false)) {
-					case "upload": {
-						switch (interaction.options.getSubcommand(false)) {
-							case "suggestions": {
-								const channel = interaction.options.getChannel("channel");
-								if (channel && (channel.type == "GUILD_TEXT" || channel.type == "GUILD_NEWS")) {
-									guild.settings.suggestions.upload = channel.id;
+			switch (interaction.options.getSubcommandGroup(false)) {
+				case "upload": {
+					switch (interaction.options.getSubcommand(false)) {
+						case "suggestions": {
+							const channel = interaction.options.getChannel("channel");
+							if (channel && (channel.type == "GUILD_TEXT" || channel.type == "GUILD_NEWS")) {
+								guild.cache.settings.suggestions.upload = channel.id;
+								await updateSettings(interaction.guildId, guild.cache.settings);
 
-									await guild.updateSettings(guild.settings);
-
-									await interaction.editReply({
-										content: `Upload channel for suggestions has been set to <#${channel.id}>.`,
-									});
-								}
-								break;
+								await interaction.editReply({
+									content: `Upload channel for suggestions has been set to <#${channel.id}>.`,
+								});
 							}
-							case "polls": {
-								const channel = interaction.options.getChannel("channel");
-								if (channel && (channel.type == "GUILD_TEXT" || channel.type == "GUILD_NEWS")) {
-									guild.settings.polls.upload = channel.id;
-
-									await guild.updateSettings(guild.settings);
-
-									await interaction.editReply({
-										content: `Upload channel for polls has been set to <#${channel.id}>.`,
-									});
-								}
-								break;
-							}
+							break;
 						}
-						break;
 					}
+					break;
 				}
 			}
 		},

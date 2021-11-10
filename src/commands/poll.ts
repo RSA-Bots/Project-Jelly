@@ -1,6 +1,7 @@
-import { GuildMember, MessageEmbed, Permissions } from "discord.js";
+import { GuildMember, MessageEmbed, Permissions, TextChannel } from "discord.js";
 import { Command } from "../types/command";
 import { getGuild, guildCache } from "../types/guild";
+import { getUser, updateStats } from "../types/user";
 
 //todo: Implement a way to show the leading result of a poll, maybe on the embed itself, as well as in the thread.
 
@@ -11,12 +12,6 @@ new Command("poll")
 		type: "slashCommand",
 		description: "Create a suggestion.",
 		options: [
-			{
-				type: "BOOLEAN",
-				name: "thread",
-				description: "Would you like to create a discussion thread for this poll?",
-				required: true,
-			},
 			{
 				type: "STRING",
 				name: "question",
@@ -70,43 +65,24 @@ new Command("poll")
 				name: "option9",
 				description: "An option for the poll.",
 			},
+			{
+				type: "BOOLEAN",
+				name: "thread",
+				description: "Create a discussion thread for this poll?",
+			},
 		],
 		defaultPermission: true,
 		callback: async interaction => {
 			await interaction.deferReply({ ephemeral: true });
 
-			if (!interaction.guildId || !interaction.guild || !(interaction.member instanceof GuildMember)) return;
-
-			const guild = await getGuild(interaction.guildId);
-			const guildInfo = guildCache.find(guild => guild.id == interaction.guildId);
-			if (!guild || !guildInfo) {
-				await interaction.editReply({
-					content: "Could not find guild information.",
-				});
-				return;
-			}
-
-			const bot = interaction.guild.me;
-			const uploadChannel = await interaction.guild.channels.fetch(guild.settings.polls.upload);
-
-			if (!uploadChannel) {
-				interaction.editReply({
-					content: "You must set a channel for polls to be uploaded to using the `/settings` command.",
-				});
-				return;
-			}
 			if (
-				uploadChannel.type != "GUILD_TEXT" ||
-				!bot ||
-				!bot.permissionsIn(uploadChannel).has("VIEW_CHANNEL") ||
-				!bot.permissionsIn(uploadChannel).has("SEND_MESSAGES") ||
-				!bot.permissionsIn(uploadChannel).has("MANAGE_THREADS")
-			) {
-				await interaction.editReply({
-					content: "The bot does not have sufficient permissions in the upload channel for polls.",
-				});
+				!interaction.guild ||
+				!(interaction.member instanceof GuildMember) ||
+				!(interaction.channel instanceof TextChannel)
+			)
 				return;
-			}
+
+			const user = await getUser(interaction.user.id);
 
 			const avatarURL = interaction.user.avatarURL();
 			if (!avatarURL) return;
@@ -138,7 +114,7 @@ new Command("poll")
 			}
 			embed.setDescription(description);
 
-			const message = await uploadChannel.send({ embeds: [embed] });
+			const message = await interaction.channel.send({ embeds: [embed] });
 			for (let iterator = 1; iterator <= 9; iterator++) {
 				const option = interaction.options.getString(`option${iterator}`);
 				if (option) {
@@ -147,7 +123,7 @@ new Command("poll")
 			}
 
 			if (interaction.options.getBoolean("thread")) {
-				const thread = await uploadChannel.threads.create({
+				const thread = await interaction.channel.threads.create({
 					startMessage: message,
 					name: question,
 					autoArchiveDuration: 1440,
@@ -161,6 +137,9 @@ new Command("poll")
 					content: "Poll has been created.",
 				});
 			}
+
+			user.cache.stats.createdPolls += 1;
+			await updateStats(interaction.user.id, user.cache.stats);
 		},
 	})
 	.setPermissions([Permissions.FLAGS.MANAGE_GUILD]);

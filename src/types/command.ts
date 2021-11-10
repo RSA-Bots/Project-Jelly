@@ -81,10 +81,18 @@ export class Command {
 	}
 
 	registerCommand(command: SlashCommand | MessageCommand) {
-		if (command.type && command.type == "slashCommand") {
-			this.events.slashCommand = command;
-		} else if (command.type && command.type == "messageCommand") {
-			this.events.messageCommand = command;
+		if (command.type == "slashCommand") {
+			if (!this.events.slashCommand) {
+				this.events.slashCommand = command;
+			} else {
+				console.error("Tried to register a command of a type that has already been registered.");
+			}
+		} else if (command.type == "messageCommand") {
+			if (!this.events.messageCommand) {
+				this.events.messageCommand = command;
+			} else {
+				console.error("Tried to register a command of a type that has already been registered.");
+			}
 		} else {
 			console.error("Tried to register a command that is not of type slashCommand or of type messageCommand");
 		}

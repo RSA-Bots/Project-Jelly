@@ -1,5 +1,5 @@
 import type { Client, Guild, Interaction, Message, Role, ThreadChannel } from "discord.js";
-import { read, readdirSync } from "fs";
+import { readdirSync } from "fs";
 import { client } from "../index";
 
 export type Events = Message | Interaction | Role | Guild | ThreadChannel | Client;

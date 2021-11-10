@@ -1,42 +1,28 @@
 import type { Snowflake } from "discord-api-types";
-import { model, Schema } from "mongoose";
+import { Document, model, Schema } from "mongoose";
 import type { Suggestion } from "./suggestion";
-
-export const guildCache: guildData[] = [];
 export interface guildData {
 	id: Snowflake;
 	settings: {
 		suggestions: {
 			upload: Snowflake;
 		};
-		polls: {
-			upload: Snowflake;
-		};
-		commands: { name: string; channel: Snowflake }[];
 	};
 	suggestions: Suggestion[];
-	uploadSuggestion(suggestion: Suggestion): Promise<void>;
-	updateSuggestion(suggestion: Suggestion): Promise<void>;
-	updateSettings(settings: guildData["settings"]): Promise<void>;
 }
 
-const IGuildSchema = new Schema<guildData>({
+export interface guildCacheData {
+	document: Document<guildData>;
+	cache: guildData;
+}
+
+export const guildCache: guildCacheData[] = [];
+
+export const IGuildSchema = new Schema<guildData>({
 	id: { type: String, required: true },
 	settings: {
 		suggestions: {
 			upload: { type: String, default: "" },
-		},
-		polls: {
-			upload: { type: String, default: "" },
-		},
-		commands: {
-			type: [
-				{
-					name: { type: String, required: true },
-					channel: { type: String, required: true },
-				},
-			],
-			default: [],
 		},
 	},
 	suggestions: {
@@ -51,73 +37,85 @@ const IGuildSchema = new Schema<guildData>({
 					id: { type: String, default: "" },
 					time: { type: String, default: "" },
 				},
+				content: { type: String, default: "" },
+				comment: { type: String, default: "" },
 			},
 		],
 		default: [],
 	},
 });
 
-IGuildSchema.method({
-	uploadSuggestion: async function (this: guildData, suggestion: Suggestion): Promise<void> {
-		const guildInfo = guildCache.find(guild => guild.id == this.id);
-		if (!guildInfo) return;
-
-		guildInfo.suggestions.push(suggestion);
-
-		await IGuild.updateOne(
-			{ id: this.id },
-			{
-				$push: { suggestions: suggestion },
-			}
-		);
-	},
-	updateSuggestion: async function (this: guildData, suggestion: Suggestion): Promise<void> {
-		const guildInfo = guildCache.find(guild => guild.id == this.id);
-		if (!guildInfo) return;
-
-		guildInfo.suggestions[
-			guildInfo.suggestions.findIndex(cachedSuggestion => cachedSuggestion.id == suggestion.id)
-		] = suggestion;
-
-		await IGuild.updateOne(
-			{ id: this.id, "suggestions.id": suggestion.id },
-			{
-				$set: { "suggestions.$": suggestion },
-			}
-		);
-	},
-	updateSettings: async function (this: guildData, settings: guildData["settings"]): Promise<void> {
-		const guildInfo = guildCache.find(guild => guild.id == this.id);
-		if (!guildInfo) return;
-
-		guildInfo.settings = settings;
-
-		await IGuild.updateOne(
-			{ id: this.id },
-			{
-				$set: { settings: settings },
-			}
-		);
-	},
-});
-
 export const IGuild = model<guildData>("Guild", IGuildSchema);
 
-export function getGuild(guildId: Snowflake): Promise<guildData | void> {
-	return IGuild.findOne({ id: guildId })
+export async function uploadGuild(guildId: Snowflake): Promise<{ document: Document<guildData>; cache: guildData }> {
+	const document = await IGuild.where({ id: guildId })
+		.findOne()
 		.then(async guild => {
 			if (guild) {
-				guildCache.push(guild);
 				return guild;
 			} else {
-				const newGuild = new IGuild({
+				const upload = new IGuild({
 					id: guildId,
 				});
 
-				guildCache.push(newGuild);
-				await newGuild.save();
-				return newGuild;
+				await upload.save();
+				return upload;
 			}
-		})
-		.catch(console.log);
+		});
+
+	const index = guildCache.push({
+		document: document,
+		cache: {
+			id: document.id,
+			settings: document.settings,
+			suggestions: document.suggestions,
+		},
+	});
+
+	return guildCache[index - 1];
+}
+export async function getGuild(guildId: Snowflake): Promise<{ document: Document<guildData>; cache: guildData }> {
+	const search = guildCache.find(guild => guild.cache.id == guildId);
+
+	if (search) {
+		return search;
+	} else {
+		return await uploadGuild(guildId);
+	}
+}
+export async function uploadSuggestion(guildId: Snowflake, suggestion: Suggestion): Promise<void> {
+	await IGuild.updateOne(
+		{ id: guildId },
+		{
+			$push: { suggestions: suggestion },
+		}
+	);
+
+	const guild = await getGuild(guildId);
+	guild.cache.suggestions.push(suggestion);
+}
+export async function updateSuggestion(guildId: Snowflake, suggestion: Suggestion): Promise<void> {
+	await IGuild.updateOne(
+		{
+			id: guildId,
+			"suggestions.id": suggestion.id,
+		},
+		{
+			$set: { "suggestions.$": suggestion },
+		}
+	);
+
+	const guild = await getGuild(guildId);
+	guild.cache.suggestions[guild.cache.suggestions.findIndex(cache => cache.id == suggestion.id)] = suggestion;
+}
+export async function updateSettings(guildId: Snowflake, settings: guildData["settings"]): Promise<void> {
+	await IGuild.updateOne(
+		{ id: guildId },
+		{
+			$set: { settings: settings },
+		}
+	);
+
+	const guild = await getGuild(guildId);
+	guild.cache.settings = settings;
 }
