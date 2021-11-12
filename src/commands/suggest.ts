@@ -64,7 +64,7 @@ const suggest = new Command("suggest")
 			if (!description) return;
 
 			const upload: Suggestion = {
-				id: guild.cache.suggestions.length.toString(),
+				id: (guild.cache.suggestions.length + 1).toString(),
 				messageId: "",
 				channelId: "",
 				threadId: "",
