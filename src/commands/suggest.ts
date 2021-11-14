@@ -181,13 +181,12 @@ const suggest = new Command("suggest")
 				}
 
 				const guild = await getGuild(interaction.guildId);
-				const index = guild.cache.suggestions.findIndex(
+				const suggestion = guild.cache.suggestions.find(
 					suggestion => suggestion.messageId == interaction.message.id
 				);
-				if (!index) return;
-				const suggestion = guild.cache.suggestions[index];
-				const user = userCache.find(user => suggestion.author.id == user.cache.id);
-				if (!user) return;
+				if (!suggestion) return;
+
+				const user = await getUser(suggestion.author.id);
 
 				if (suggestion.status == "denied") {
 					user.cache.analytics.deniedSuggestions -= 1;
@@ -229,13 +228,12 @@ const suggest = new Command("suggest")
 				}
 
 				const guild = await getGuild(interaction.guildId);
-				const index = guild.cache.suggestions.findIndex(
+				const suggestion = guild.cache.suggestions.find(
 					suggestion => suggestion.messageId == interaction.message.id
 				);
-				if (!index) return;
-				const suggestion = guild.cache.suggestions[index];
-				const user = userCache.find(user => suggestion.author.id == user.cache.id);
-				if (!user) return;
+				if (!suggestion) return;
+
+				const user = await getUser(suggestion.author.id);
 
 				if (suggestion.status == "approved") {
 					user.cache.analytics.approvedSuggestions -= 1;
@@ -269,11 +267,10 @@ const suggest = new Command("suggest")
 				}
 
 				const guild = await getGuild(interaction.guildId);
-				const index = guild.cache.suggestions.findIndex(
+				const suggestion = guild.cache.suggestions.find(
 					suggestion => suggestion.messageId == interaction.message.id
 				);
-				if (!index) return;
-				const suggestion = guild.cache.suggestions[index];
+				if (!suggestion) return;
 
 				suggestion.status = "completed";
 				await updateSuggestion(interaction.guildId, suggestion);
@@ -291,11 +288,10 @@ const suggest = new Command("suggest")
 				}
 
 				const guild = await getGuild(interaction.guildId);
-				const index = guild.cache.suggestions.findIndex(
+				const suggestion = guild.cache.suggestions.find(
 					suggestion => suggestion.messageId == interaction.message.id
 				);
-				if (!index) return;
-				const suggestion = guild.cache.suggestions[index];
+				if (!suggestion) return;
 
 				suggestion.status = "removed";
 				await updateSuggestion(interaction.guildId, suggestion);

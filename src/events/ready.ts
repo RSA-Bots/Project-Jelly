@@ -3,7 +3,6 @@ import { linkSlashCommands } from "../types/command";
 import { Event } from "../types/event";
 import { getGuild } from "../types/guild";
 import { getUser, IUser } from "../types/user";
-import { client } from "..";
 
 new Event<Client>("ready", true, async client => {
 	for (const guild of (await client.guilds.fetch()).values()) {
@@ -16,7 +15,9 @@ new Event<Client>("ready", true, async client => {
 				const channel = await client.channels.fetch(suggestion.channelId);
 				if (!(channel instanceof TextChannel)) continue;
 
-				await channel.messages.fetch(suggestion.messageId);
+				if (suggestion.status != "removed") {
+					channel.messages.fetch(suggestion.messageId).catch(error => {});
+				}
 			}
 		});
 	}
