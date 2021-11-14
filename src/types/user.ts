@@ -9,6 +9,7 @@ export interface userData {
 		approvedSuggestions: number;
 		deniedSuggestions: number;
 		createdSuggestions: number;
+		popularSuggestions: number;
 		createdPolls: number;
 	};
 }
@@ -26,7 +27,9 @@ const IUserSchema = new Schema<userData>({
 	prefix: { type: String, default: ";" },
 	analytics: {
 		approvedSuggestions: { type: Number, default: 0 },
+		deniedSuggestions: { type: Number, default: 0 },
 		createdSuggestions: { type: Number, default: 0 },
+		popularSuggestions: { type: Number, default: 0 },
 		createdPolls: { type: Number, default: 0 },
 	},
 });

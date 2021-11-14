@@ -2,6 +2,7 @@ import { Message, MessageEmbed, MessageReaction, TextChannel, User } from "disco
 import { client } from "..";
 import { Event } from "../types/event";
 import { getGuild, updateSuggestion } from "../types/guild";
+import { getUser, updateAnalytics } from "../types/user";
 
 new Event<MessageReaction, User>("messageReactionAdd", false, async (reaction, user) => {
 	const message = reaction.message;
@@ -14,22 +15,23 @@ new Event<MessageReaction, User>("messageReactionAdd", false, async (reaction, u
 	if (suggestion) {
 		const settings = guild.cache.settings.suggestions.upload.popular;
 
-		if (
-			settings.id &&
-			reaction.emoji.name == "👍" &&
-			reaction.count >= settings.threshold &&
-			!suggestion.isPopular
-		) {
-			suggestion.isPopular = true;
-			await updateSuggestion(guild.cache.id, suggestion);
+		if (reaction.emoji.name == "👍" && reaction.count >= settings.threshold && !suggestion.isPopular) {
+			const user = await getUser(suggestion.author.id);
+			user.cache.analytics.popularSuggestions += 1;
+			await updateAnalytics(user.cache.id, user.cache.analytics);
 
-			const uploadChannel = await client.channels.fetch(settings.id);
-			if (uploadChannel instanceof TextChannel) {
-				const poll = await uploadChannel.send({
-					embeds: message.embeds,
-				});
-				if (settings.poll) {
-					await poll.react("👍"), await poll.react("👎");
+			if (settings.id) {
+				suggestion.isPopular = true;
+				await updateSuggestion(guild.cache.id, suggestion);
+
+				const uploadChannel = await client.channels.fetch(settings.id);
+				if (uploadChannel instanceof TextChannel) {
+					const poll = await uploadChannel.send({
+						embeds: message.embeds,
+					});
+					if (settings.poll) {
+						await poll.react("👍"), await poll.react("👎");
+					}
 				}
 			}
 		}
