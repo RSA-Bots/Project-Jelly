@@ -1,7 +1,7 @@
 import { GuildMember, MessageEmbed, Permissions, TextChannel } from "discord.js";
 import { Command } from "../types/command";
 import { getGuild, guildCache } from "../types/guild";
-import { getUser, updateStats } from "../types/user";
+import { getUser, updateAnalytics } from "../types/user";
 
 //todo: Implement a way to show the leading result of a poll, maybe on the embed itself, as well as in the thread.
 
@@ -138,8 +138,8 @@ new Command("poll")
 				});
 			}
 
-			user.cache.stats.createdPolls += 1;
-			await updateStats(interaction.user.id, user.cache.stats);
+			user.cache.analytics.createdPolls += 1;
+			await updateAnalytics(user.cache.id, user.cache.analytics);
 		},
 	})
 	.setPermissions([Permissions.FLAGS.MANAGE_GUILD]);

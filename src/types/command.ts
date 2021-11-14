@@ -10,6 +10,7 @@ import type {
 	MessageSelectMenu,
 	PermissionResolvable,
 	SelectMenuInteraction,
+	Snowflake,
 } from "discord.js";
 import { readdirSync } from "fs";
 
@@ -26,7 +27,8 @@ export type SlashCommand = {
 
 export type MessageCommand = {
 	aliases?: string[];
-	callback: (message: Message, args?: string[]) => void;
+	whitelist?: Snowflake[];
+	callback: (message: Message, args: string[]) => void;
 	type: "messageCommand";
 };
 

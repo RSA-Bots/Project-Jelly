@@ -1,11 +1,21 @@
 import type { Snowflake } from "discord-api-types";
 import { Document, model, Schema } from "mongoose";
+import { client } from "..";
 import type { Suggestion } from "./suggestion";
 export interface guildData {
 	id: Snowflake;
 	settings: {
 		suggestions: {
-			upload: Snowflake;
+			upload: {
+				default: {
+					id: Snowflake;
+				};
+				popular: {
+					id: Snowflake;
+					threshold: number;
+					poll: boolean;
+				};
+			};
 		};
 	};
 	suggestions: Suggestion[];
@@ -22,7 +32,16 @@ export const IGuildSchema = new Schema<guildData>({
 	id: { type: String, required: true },
 	settings: {
 		suggestions: {
-			upload: { type: String, default: "" },
+			upload: {
+				default: {
+					id: { type: String, default: "" },
+				},
+				popular: {
+					id: { type: String, default: "" },
+					threshold: { type: Number, default: 10 },
+					poll: { type: Boolean, default: true },
+				},
+			},
 		},
 	},
 	suggestions: {
@@ -118,4 +137,12 @@ export async function updateSettings(guildId: Snowflake, settings: guildData["se
 
 	const guild = await getGuild(guildId);
 	guild.cache.settings = settings;
+}
+
+export async function deleteGuilds(): Promise<void> {
+	await IGuild.deleteMany({});
+	guildCache.splice(0, guildCache.length);
+	for (const guild of (await client.guilds.fetch()).values()) {
+		await getGuild(guild.id);
+	}
 }

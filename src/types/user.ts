@@ -1,9 +1,11 @@
 import type { Snowflake } from "discord-api-types";
+import type { User } from "discord.js";
 import { Document, model, Schema } from "mongoose";
 export interface userData {
 	id: Snowflake;
+	username: string;
 	prefix: string;
-	stats: {
+	analytics: {
 		approvedSuggestions: number;
 		deniedSuggestions: number;
 		createdSuggestions: number;
@@ -20,8 +22,9 @@ export const userCache: userCacheData[] = [];
 
 const IUserSchema = new Schema<userData>({
 	id: { type: String, required: true },
+	username: { type: String, default: "" },
 	prefix: { type: String, default: ";" },
-	stats: {
+	analytics: {
 		approvedSuggestions: { type: Number, default: 0 },
 		createdSuggestions: { type: Number, default: 0 },
 		createdPolls: { type: Number, default: 0 },
@@ -33,9 +36,9 @@ export const IUser = model<userData>("User", IUserSchema);
 export async function uploadUser(userId: Snowflake): Promise<{ document: Document<userData>; cache: userData }> {
 	const document = await IUser.where({ id: userId })
 		.findOne()
-		.then(async user => {
-			if (user) {
-				return user;
+		.then(async document => {
+			if (document) {
+				return document;
 			} else {
 				const upload = new IUser({
 					id: userId,
@@ -50,8 +53,9 @@ export async function uploadUser(userId: Snowflake): Promise<{ document: Documen
 		document: document,
 		cache: {
 			id: document.id,
+			username: document.username,
 			prefix: document.prefix,
-			stats: document.stats,
+			analytics: document.analytics,
 		},
 	});
 
@@ -59,7 +63,7 @@ export async function uploadUser(userId: Snowflake): Promise<{ document: Documen
 }
 
 export async function getUser(userId: Snowflake): Promise<{ document: Document<userData>; cache: userData }> {
-	const search = userCache.find(user => user.cache.id == userId);
+	const search = userCache.find(compare => compare.cache.id == userId);
 
 	if (search) {
 		return search;
@@ -67,14 +71,40 @@ export async function getUser(userId: Snowflake): Promise<{ document: Document<u
 		return await uploadUser(userId);
 	}
 }
-export async function updateStats(userId: Snowflake, stats: userData["stats"]): Promise<void> {
+
+export async function updateUsername(userId: Snowflake, username: string): Promise<void> {
 	await IUser.updateOne(
 		{ id: userId },
 		{
-			$set: { stats: stats },
+			$set: { username: username },
 		}
 	);
 
-	const user = await getUser(userId);
-	user.cache.stats = stats;
+	(await getUser(userId)).cache.username = username;
+}
+
+export async function updateAnalytics(userId: Snowflake, analytics: userData["analytics"]): Promise<void> {
+	await IUser.updateOne(
+		{ id: userId },
+		{
+			$set: { analytics: analytics },
+		}
+	);
+
+	(await getUser(userId)).cache.analytics = analytics;
+}
+
+export async function deleteUsers(): Promise<void> {
+	await IUser.deleteMany({});
+	userCache.splice(0, userCache.length);
+}
+
+export async function deleteUser(userId: Snowflake): Promise<void> {
+	await IUser.deleteOne({
+		id: userId,
+	});
+
+	userCache.find((compare, index) => {
+		if (compare.cache.id == userId) return userCache.splice(index, 1);
+	});
 }

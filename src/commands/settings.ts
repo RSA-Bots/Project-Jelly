@@ -9,13 +9,13 @@ new Command("settings")
 		options: [
 			{
 				type: "SUB_COMMAND_GROUP",
-				name: "upload",
-				description: "Change the upload channel for a command.",
+				name: "suggestions",
+				description: "Change the settings for suggestions.",
 				options: [
 					{
 						type: "SUB_COMMAND",
-						name: "suggestions",
-						description: "Change the upload channel of suggestions.",
+						name: "upload",
+						description: "Set the upload channel for a suggestion.",
 						options: [
 							{
 								type: "CHANNEL",
@@ -23,6 +23,30 @@ new Command("settings")
 								description: "The channel to upload suggestions to.",
 								channelTypes: ["GUILD_TEXT"],
 								required: true,
+							},
+						],
+					},
+					{
+						type: "SUB_COMMAND",
+						name: "popular",
+						description: "Set the upload channel for a popular suggestion.",
+						options: [
+							{
+								type: "CHANNEL",
+								name: "channel",
+								description: "The channel to upload popular suggestions to.",
+								channelTypes: ["GUILD_TEXT"],
+								required: true,
+							},
+							{
+								type: "NUMBER",
+								name: "threshold",
+								description: "The amount of upvotes to be considered popular.",
+							},
+							{
+								type: "BOOLEAN",
+								name: "poll",
+								description: "Create a poll for the uploaded suggestions?",
 							},
 						],
 					},
@@ -36,18 +60,34 @@ new Command("settings")
 			const guild = await getGuild(interaction.guildId);
 
 			switch (interaction.options.getSubcommandGroup(false)) {
-				case "upload": {
+				case "suggestions": {
 					switch (interaction.options.getSubcommand(false)) {
-						case "suggestions": {
+						case "upload": {
 							const channel = interaction.options.getChannel("channel");
-							if (channel && (channel.type == "GUILD_TEXT" || channel.type == "GUILD_NEWS")) {
-								guild.cache.settings.suggestions.upload = channel.id;
-								await updateSettings(interaction.guildId, guild.cache.settings);
+							if (channel) guild.cache.settings.suggestions.upload.default.id = channel.id;
 
-								await interaction.editReply({
-									content: `Upload channel for suggestions has been set to <#${channel.id}>.`,
-								});
-							}
+							await updateSettings(interaction.guildId, guild.cache.settings);
+
+							await interaction.editReply({
+								content: "Settings for suggestions have been updated.",
+							});
+							break;
+						}
+						case "popular": {
+							const channel = interaction.options.getChannel("channel");
+							if (channel) guild.cache.settings.suggestions.upload.popular.id = channel.id;
+
+							const threshold = interaction.options.getNumber("threshold");
+							if (threshold) guild.cache.settings.suggestions.upload.popular.threshold = threshold;
+
+							const poll = interaction.options.getBoolean("poll");
+							if (poll) guild.cache.settings.suggestions.upload.popular.poll = poll;
+
+							await updateSettings(interaction.guildId, guild.cache.settings);
+
+							await interaction.editReply({
+								content: "Settings for suggestions have been updated.",
+							});
 							break;
 						}
 					}

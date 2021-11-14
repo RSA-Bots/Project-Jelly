@@ -1,8 +1,16 @@
-import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, MessageEmbed, Permissions } from "discord.js";
+import {
+	ButtonInteraction,
+	GuildMember,
+	Message,
+	MessageActionRow,
+	MessageButton,
+	MessageEmbed,
+	Permissions,
+} from "discord.js";
 import { Command } from "../types/command";
 import { getGuild, guildCache, updateSettings, updateSuggestion, uploadSuggestion } from "../types/guild";
 import type { Suggestion } from "../types/suggestion";
-import { getUser, updateStats } from "../types/user";
+import { getUser, updateAnalytics, userCache } from "../types/user";
 
 const suggest = new Command("suggest")
 	.registerCommand({
@@ -36,7 +44,9 @@ const suggest = new Command("suggest")
 			const user = await getUser(interaction.user.id);
 
 			const bot = interaction.guild.me;
-			const uploadChannel = await interaction.guild.channels.fetch(guild.cache.settings.suggestions.upload);
+			const uploadChannel = await interaction.guild.channels.fetch(
+				guild.cache.settings.suggestions.upload.default.id
+			);
 
 			if (uploadChannel == null) {
 				interaction.editReply({
@@ -75,6 +85,7 @@ const suggest = new Command("suggest")
 				},
 				content: description,
 				comment: "",
+				isPopular: false,
 			};
 			await uploadSuggestion(interaction.guildId, upload);
 
@@ -84,7 +95,10 @@ const suggest = new Command("suggest")
 			const row = new MessageActionRow();
 			if (suggest.buttons) {
 				suggest.buttons.forEach(button => {
-					if (button.object.customId != "completeSuggestion") {
+					if (
+						button.object.customId != "completeSuggestion" &&
+						button.object.customId != "removeSuggestion"
+					) {
 						button.object.setDisabled(false);
 						row.addComponents(button.object);
 					}
@@ -132,10 +146,10 @@ const suggest = new Command("suggest")
 				});
 			}
 
-			user.cache.stats.createdSuggestions += 1;
+			user.cache.analytics.createdSuggestions += 1;
 
 			await updateSuggestion(interaction.guildId, upload);
-			await updateStats(interaction.user.id, user.cache.stats);
+			await updateAnalytics(interaction.user.id, user.cache.analytics);
 		},
 	})
 	.addButtons([
@@ -145,25 +159,6 @@ const suggest = new Command("suggest")
 				await interaction.deferUpdate();
 				if (!interaction.guild) return;
 
-				const guild = await getGuild(interaction.guildId);
-				const index = guild.cache.suggestions.findIndex(
-					suggestion => suggestion.messageId == interaction.message.id
-				);
-				if (!index) return;
-				const suggestion = guild.cache.suggestions[index];
-
-				const user = await getUser(suggestion.author.id);
-
-				const channel = await interaction.guild.channels.fetch(suggestion.channelId);
-				if (!channel || channel.type != "GUILD_TEXT") return;
-
-				const message = await channel.messages.fetch(suggestion.messageId);
-				const embed = message.embeds[0];
-				const statusField = embed.fields.find(field => field.name == "Status");
-				if (!statusField) return;
-
-				statusField.value = `Approved`;
-
 				const row = new MessageActionRow();
 				const denyButton = suggest.buttons.find(button => button.object.customId == "denySuggestion");
 				const completeButton = suggest.buttons.find(button => button.object.customId == "completeSuggestion");
@@ -171,19 +166,37 @@ const suggest = new Command("suggest")
 
 				row.setComponents([completeButton.object, denyButton.object]);
 
-				await message.edit({
-					embeds: [embed],
-					components: [row],
-				});
+				const message = await interaction.message;
+				if (message instanceof Message) {
+					const embed = message.embeds[0];
+					const statusField = embed.fields.find(field => field.name == "Status");
+					if (!statusField) return;
+
+					statusField.value = `Approved`;
+
+					await message.edit({
+						embeds: [embed],
+						components: [row],
+					});
+				}
+
+				const guild = await getGuild(interaction.guildId);
+				const index = guild.cache.suggestions.findIndex(
+					suggestion => suggestion.messageId == interaction.message.id
+				);
+				if (!index) return;
+				const suggestion = guild.cache.suggestions[index];
+				const user = userCache.find(user => suggestion.author.id == user.cache.id);
+				if (!user) return;
 
 				if (suggestion.status == "denied") {
-					user.cache.stats.deniedSuggestions -= 1;
+					user.cache.analytics.deniedSuggestions -= 1;
 				}
 
 				suggestion.status = "approved";
-				user.cache.stats.approvedSuggestions += 1;
+				user.cache.analytics.approvedSuggestions += 1;
 
-				await updateStats(user.cache.id, user.cache.stats);
+				await updateAnalytics(user.cache.id, user.cache.analytics);
 				await updateSuggestion(interaction.guildId, suggestion);
 			},
 			permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
@@ -194,44 +207,43 @@ const suggest = new Command("suggest")
 				await interaction.deferUpdate();
 				if (!interaction.guild) return;
 
+				const row = new MessageActionRow();
+				const approveButton = suggest.buttons.find(button => button.object.customId == "approveSuggestion");
+				const removeButton = suggest.buttons.find(button => button.object.customId == "removeSuggestion");
+				if (!approveButton || !removeButton) return;
+
+				row.setComponents([approveButton.object, removeButton.object]);
+
+				const message = await interaction.message;
+				if (message instanceof Message) {
+					const embed = message.embeds[0];
+					const statusField = embed.fields.find(field => field.name == "Status");
+					if (!statusField) return;
+
+					statusField.value = `Denied`;
+
+					await message.edit({
+						embeds: [embed],
+						components: [row],
+					});
+				}
+
 				const guild = await getGuild(interaction.guildId);
 				const index = guild.cache.suggestions.findIndex(
 					suggestion => suggestion.messageId == interaction.message.id
 				);
 				if (!index) return;
 				const suggestion = guild.cache.suggestions[index];
-
-				const user = await getUser(suggestion.author.id);
-
-				const channel = await interaction.guild.channels.fetch(suggestion.channelId);
-				if (!channel || channel.type != "GUILD_TEXT") return;
-
-				const message = await channel.messages.fetch(suggestion.messageId);
-				const embed = message.embeds[0];
-				const statusField = embed.fields.find(field => field.name == "Status");
-				if (!statusField) return;
-
-				statusField.value = `Denied`;
-
-				const row = new MessageActionRow();
-				const approveButton = suggest.buttons.find(button => button.object.customId == "approveSuggestion");
-				if (!approveButton) return;
-
-				row.setComponents([approveButton.object]);
-
-				await message.edit({
-					embeds: [embed],
-					components: [row],
-				});
+				const user = userCache.find(user => suggestion.author.id == user.cache.id);
+				if (!user) return;
 
 				if (suggestion.status == "approved") {
-					user.cache.stats.approvedSuggestions -= 1;
+					user.cache.analytics.approvedSuggestions -= 1;
 				}
-
 				suggestion.status = "denied";
-				user.cache.stats.deniedSuggestions += 1;
+				user.cache.analytics.deniedSuggestions += 1;
 
-				await updateStats(user.cache.id, user.cache.stats);
+				await updateAnalytics(user.cache.id, user.cache.analytics);
 				await updateSuggestion(interaction.guildId, suggestion);
 			},
 			permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
@@ -242,6 +254,20 @@ const suggest = new Command("suggest")
 				await interaction.deferUpdate();
 				if (!interaction.guild) return;
 
+				const message = await interaction.message;
+				if (message instanceof Message) {
+					const embed = message.embeds[0];
+					const statusField = embed.fields.find(field => field.name == "Status");
+					if (!statusField) return;
+
+					statusField.value = `Completed`;
+
+					await message.edit({
+						embeds: [embed],
+						components: [],
+					});
+				}
+
 				const guild = await getGuild(interaction.guildId);
 				const index = guild.cache.suggestions.findIndex(
 					suggestion => suggestion.messageId == interaction.message.id
@@ -249,22 +275,29 @@ const suggest = new Command("suggest")
 				if (!index) return;
 				const suggestion = guild.cache.suggestions[index];
 
-				const channel = await interaction.guild.channels.fetch(suggestion.channelId);
-				if (!channel || channel.type != "GUILD_TEXT") return;
-
-				const message = await channel.messages.fetch(suggestion.messageId);
-				const embed = message.embeds[0];
-				const statusField = embed.fields.find(field => field.name == "Status");
-				if (!statusField) return;
-
-				statusField.value = `Completed`;
-
-				await message.edit({
-					embeds: [embed],
-					components: [],
-				});
-
 				suggestion.status = "completed";
+				await updateSuggestion(interaction.guildId, suggestion);
+			},
+			permissions: [Permissions.FLAGS.MANAGE_MESSAGES],
+		},
+		{
+			object: new MessageButton().setCustomId("removeSuggestion").setLabel("Remove").setStyle("DANGER"),
+			callback: async interaction => {
+				await interaction.deferUpdate();
+
+				const message = await interaction.message;
+				if (message instanceof Message) {
+					await message.delete();
+				}
+
+				const guild = await getGuild(interaction.guildId);
+				const index = guild.cache.suggestions.findIndex(
+					suggestion => suggestion.messageId == interaction.message.id
+				);
+				if (!index) return;
+				const suggestion = guild.cache.suggestions[index];
+
+				suggestion.status = "removed";
 				await updateSuggestion(interaction.guildId, suggestion);
 			},
 			permissions: [Permissions.FLAGS.MANAGE_MESSAGES],

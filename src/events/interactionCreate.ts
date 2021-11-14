@@ -2,7 +2,7 @@ import { Interaction, NewsChannel, TextChannel, ThreadChannel } from "discord.js
 import { commands } from "../types/command";
 import { Event } from "../types/event";
 
-new Event<Interaction>("interactionCreate", false, async (interaction: Interaction) => {
+new Event<Interaction>("interactionCreate", false, async interaction => {
 	if (
 		!interaction.guild ||
 		!interaction.guild.me ||

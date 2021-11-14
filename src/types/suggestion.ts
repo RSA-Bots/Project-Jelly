@@ -12,4 +12,5 @@ export type Suggestion = {
 	};
 	content: string;
 	comment: string;
+	isPopular: boolean;
 };
