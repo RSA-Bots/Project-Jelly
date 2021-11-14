@@ -36,7 +36,6 @@ new Command("settings")
 								name: "channel",
 								description: "The channel to upload popular suggestions to.",
 								channelTypes: ["GUILD_TEXT"],
-								required: true,
 							},
 							{
 								type: "NUMBER",
